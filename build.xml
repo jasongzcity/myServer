@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+
+<project name="server" default="run" basedir=".">
+	
+	<property name="lib.dir" value="${basedir}/lib" />
+	<property  name="output.dir" value="${basedir}/build" />
+	<property name="classes.dir" value="${output.dir}/classes" />
+	
+	<path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
+
+    <target name="clean">
+        <delete dir="${output.dir}"/>
+    </target>
+
+    <target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="src" destdir="build/classes" >
+        	    <classpath>
+        	    		<path refid="classpath" />
+        	    </classpath>
+    	   </javac>
+    </target>
+    
+<!--
+    <target name="jar">
+        <mkdir dir="build/jar"/>
+        <jar destfile="build/jar/servlet-api-3.1" basedir="build/classes">
+            <manifest>
+                <attribute name="Main-Class" value="javax.servlet.Servlet"/>
+            </manifest>
+        </jar>
+    </target>
+-->
+
+    <target name="run" depends="clean,compile" >
+        <java classname="com.jason.server.simpleContainer.HttpServer1"  fork="true">
+            <classpath>
+                <pathelement path="build/classes" />
+                <path refid="classpath" />
+            </classpath>
+         </java>
+    </target>
+
+
+</project>
