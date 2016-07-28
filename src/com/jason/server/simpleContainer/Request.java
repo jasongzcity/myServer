@@ -8,10 +8,9 @@ import javax.servlet.*;
 /**
   * the request implements ServletRequest interface of  Servlet specification 3.1
   * to better understand how servlet works.
-  * @author Jason 
+  * @author Jason
+  * @since JDK1.8
   */
-  
-  
 public class Request implements ServletRequest
 {
 	private String uri;
@@ -52,7 +51,6 @@ public class Request implements ServletRequest
 		{
 			sb.append((char)buffer[j]);//transform byte into char
 		}
-		System.out.println(sb.toString());//print request in console
 		uri = parseUri(sb.toString());
 	}
 	

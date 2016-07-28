@@ -1,7 +1,9 @@
 package com.jason.server.connector;
 
 /**
-  * the entrance of the server. Starts the  server
+  * The entrance. Starts the  server
+  * @author lwz
+  * @since 2016-7-27
   */
 public final class Bootstrap
 {

@@ -9,13 +9,12 @@ import java.io.IOException;
   * application so user have to shutdown the server manually(by closing the commandline
   * or stopping the thread.
   * @author Jason
+  * @since JDK1.8
   */
-  
 public class HttpConnector implements Runnable
 {
-	//flag
-	private boolean stopped = false;
-	private String schema = "http";
+	private boolean stopped = false;	//flag
+	private String schema = "http"; 	//handle http request
 	//default 8080
 	private int port = 8080;
 	
@@ -32,24 +31,27 @@ public class HttpConnector implements Runnable
 	}
 	
 	@Override
-	public void run
+	public void run()
 	{
 		ServerSocket serverSocket = null;
 		try
 		{
-		 	serverSocket = new ServerSocket(port,1,InetAddress.getByName("127.0.0.1"));
+		 	serverSocket = new ServerSocket(port,1,InetAddress.getByName("127.0.0.1"));//binding
 		}
 		catch(IOException e)
 		{
 			e.printStackTrace();
 			System.exit(1);
 		}
+		int count = 0;
 		while(!stopped)
 		{
 			Socket socket = null;
 			try
 			{
 				socket = serverSocket.accept();
+				count++;
+				System.out.println(count);
 			}
 			catch(IOException e)
 			{
@@ -64,7 +66,7 @@ public class HttpConnector implements Runnable
 	public void start()
 	{
 		Thread thread = new Thread(this);			//set this object as the new thread's target
-		thread.start();											//start new thread
+		thread.start();													   //start new thread
 	}
 }
 		
