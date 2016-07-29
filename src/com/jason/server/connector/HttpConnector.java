@@ -43,15 +43,14 @@ public class HttpConnector implements Runnable
 			e.printStackTrace();
 			System.exit(1);
 		}
-		int count = 0;
+		System.out.println("server socket bind success");
 		while(!stopped)
 		{
 			Socket socket = null;
 			try
 			{
 				socket = serverSocket.accept();
-				count++;
-				System.out.println(count);
+				
 			}
 			catch(IOException e)
 			{

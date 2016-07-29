@@ -8,4 +8,9 @@ public class InvalidRequestException extends Exception
 	{
 		super(message);
 	}
+	
+	public InvalidRequestException()
+	{
+		super();
+	}
 }

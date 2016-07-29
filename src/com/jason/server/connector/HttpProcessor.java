@@ -53,9 +53,8 @@ public class HttpProcessor
 		{
 			input = new SocketInputStream(socket.getInputStream(),2048);
 			output = socket.getOutputStream();
-			MyServletRequest request = new MyServletRequest();//own-create class to be wrap
+			MyServletRequest request = new MyServletRequest();//own-create class to be wrapped
 			request.setInputStream(input);
-//			
 //			response = new HttpResponse(output);
 //			
 //			response.setRequest(request);

@@ -5,10 +5,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -37,13 +42,13 @@ import com.jason.server.util.ParameterMap;
 public class MyServletRequest implements HttpServletRequest 
 {
 	protected Map<String,Object> headers = new HashMap<String,Object>();
-	protected ParameterMap<String,String[]> parameterMap;
+	protected ParameterMap<String,String[]> parameterMap = new ParameterMap<>();
 	protected String method;
 	protected String protocol;
 	protected String requestUri;
 	protected String queryString;
 	protected String requestSessionId;
-	protected Cookie[] cookies;
+	protected ArrayList<Cookie> cookies = new ArrayList<>();//transform to array when user call getter
 	protected InputStream input;
 	protected boolean requestedSessionIdFromURL;
 	
@@ -295,39 +300,100 @@ public class MyServletRequest implements HttpServletRequest
 	}
 
 	@Override
-	public Cookie[] getCookies() {
-		// TODO Auto-generated method stub
-		return null;
+	public Cookie[] getCookies() 
+	{
+		if(cookies.size()!=0)
+		{
+			Cookie[] arr = new Cookie[cookies.size()];
+			for(int i=0;i<arr.length;i++)
+			{
+				arr[i] = cookies.get(i);
+			}
+			return arr;
+		}
+		else
+		{
+			return null;
+		}
+	}
+
+	/**
+	 * implements of HttpServletRequest
+	 * @param arg0 the name of the header
+	 * @return if it is not exists of this header name, return null.
+	 * 			if the header cant be converted to a date,throw IllegalArgumentException.
+	 * 			return the milliseconds since 1970/1/1.
+	 */
+	@Override
+	public long getDateHeader(String arg0) 
+	{
+		SimpleDateFormat sdf = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz",Locale.ENGLISH);
+		String target = getHeader(arg0);
+		if(target==null)
+		{
+			return -1L;
+		}
+		try
+		{
+			Date date = sdf.parse(target);
+			if(date != null)//been parse
+			{
+				return date.getTime();
+			}
+			else
+			{
+				throw new IllegalArgumentException("can't parse the header as date");
+			}
+		} 
+		catch (ParseException e) 
+		{
+			throw new IllegalArgumentException(e.getMessage());
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public String getHeader(String arg0)
+	{
+		Object obj = headers.get(arg0);
+		if(obj!=null)
+		{
+			if(obj instanceof String)
+			{
+				return (String)obj;
+			}
+			else
+			{
+				return ((List<String>)obj).get(0);
+			}
+		}
+		else
+		{
+			return null;
+		}
 	}
 
 	@Override
-	public long getDateHeader(String arg0) {
-		// TODO Auto-generated method stub
-		return 0;
+	public Enumeration<String> getHeaderNames() 
+	{
+		return new NameEnumerator(headers);
 	}
 
 	@Override
-	public String getHeader(String arg0) {
-		// TODO Auto-generated method stub
-		return null;
+	public Enumeration<String> getHeaders(String arg0)
+	{
+		return new ValueEnumerator(headers,arg0);
 	}
 
 	@Override
-	public Enumeration<String> getHeaderNames() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Enumeration<String> getHeaders(String arg0) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public int getIntHeader(String arg0) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int getIntHeader(String arg0) 
+	{
+		String tmp = getHeader(arg0);
+		if(tmp==null)
+		{
+			return -1;
+		}
+		return Integer.parseInt(tmp);
 	}
 
 	@Override
@@ -488,5 +554,105 @@ public class MyServletRequest implements HttpServletRequest
 	public void setRequestURI(String uri)
 	{
 		this.requestUri = uri;
+	}
+
+	@SuppressWarnings("unchecked")
+	public void setHeader(String name,String value)
+	{
+		if(headers.containsKey(name))//this seldom happens
+		{
+			Object tmp = headers.get(name);
+			if(tmp instanceof String)					
+			{
+				List<String> list = new ArrayList<>(2);
+				list.add((String)tmp);
+				list.add(value);
+				headers.put(name, list);
+			}
+			else
+			{
+				List<String> list = (List<String>)tmp;
+				list.add(value);
+			}
+		}
+		else
+		{
+			headers.put(name, value);
+		}
+	}
+	
+	public void setCookie(String name,String value)
+	{
+		Cookie cookie = new Cookie(name, value);
+		cookies.add(cookie);
+	}
+	
+	//////////////////package-own classes///////////////////
+	
+	class NameEnumerator implements Enumeration<String>
+	{
+		Iterator<String> iter;//use iterator to realize
+		NameEnumerator(Map<String,Object> map)
+		{
+			iter = map.keySet().iterator();
+		}
+		@Override
+		public boolean hasMoreElements()
+		{
+			return iter.hasNext();
+		}
+
+		@Override
+		public String nextElement()
+		{
+			return iter.next();
+		}
+	}
+	
+	class ValueEnumerator implements Enumeration<String>
+	{
+		Iterator<String> iter;
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		ValueEnumerator(Map<String,Object> map,String name)
+		{
+			Object tmp = map.get(name);
+			if(tmp!=null)
+			{
+				if(tmp instanceof List)
+				{
+					iter = ((List)tmp).iterator();
+				}
+				else
+				{
+					List<String> list = new ArrayList<>(1);
+					list.add(name);
+					iter = list.iterator();
+				}
+			}
+			else//return a empty iterator
+			{
+				iter = new Iterator<String>(){
+
+					@Override
+					public boolean hasNext() {
+						return false;
+					}
+
+					@Override
+					public String next() {
+						return null;
+					}	
+				};
+			}
+		}
+		@Override
+		public boolean hasMoreElements() {
+			return iter.hasNext();
+		}
+
+		@Override
+		public String nextElement() {
+			return iter.next();
+		}
 	}
 }

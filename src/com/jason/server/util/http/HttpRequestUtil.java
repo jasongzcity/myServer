@@ -2,6 +2,7 @@ package com.jason.server.util.http;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 
 import com.jason.server.connector.MyServletRequest;
 import com.jason.server.util.exception.InvalidRequestException;
@@ -14,9 +15,13 @@ import com.jason.server.util.exception.InvalidRequestException;
 public class HttpRequestUtil
 {
 	////////////static fields//////////////
-	private final static String contentType = "Content-Type";
+	public final static String contentType = "Content-Type";
 	
-	private final static String contentLength = "Content-Length";
+	public final static String contentLength = "Content-Length";
+	
+	//No instantiate
+	private HttpRequestUtil(){}
+	
 	
 	/**
 	 * the private method for processor to parse 
@@ -90,15 +95,25 @@ public class HttpRequestUtil
     /**
 	 * parse the request's header and put them in request
 	 * (including cookies)
-	 * @param input
-	 * @param request 
+	 * Also,it needs to parse those headers which ServletRequest
+	 * interface required(e.g Content-Type)
+	 * @param input the input stream holds byte array for request header
+	 * @param request the request to be wrapped
 	 */
 	public static void parseHeaders(SocketInputStream input,MyServletRequest request)
 	{
 		/*
-		 *  Tomcat's code which deals with request's headers & cookies is far too complicated..
+		 *  Tomcat's codes which deals with request's headers & cookies are far too complicated..
 		 *  Do it in a simpler way to deal with the most common headers.
-		 *  Others throw an exception.
+		 *  Other throws an exception.
 		 */
+		List<String> rawHeaders = input.readHeaders();
+		for(String str : rawHeaders)
+		{
+			int i = str.indexOf(':');
+			String name = str.substring(0, i);
+			String value = str.substring(i+1);
+		}
+		
 	}
 }
