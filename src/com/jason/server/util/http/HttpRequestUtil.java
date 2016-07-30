@@ -15,9 +15,11 @@ import com.jason.server.util.exception.InvalidRequestException;
 public class HttpRequestUtil
 {
 	////////////static fields//////////////
-	public final static String contentType = "Content-Type";
+	public final static String CONTENT_TYPE = "Content-Type";
 	
-	public final static String contentLength = "Content-Length";
+	public final static String CONTENT_LENGTH = "Content-Length";
+	
+	public final static String COOKIE = "Cookie";
 	
 	//No instantiate
 	private HttpRequestUtil(){}
@@ -96,6 +98,7 @@ public class HttpRequestUtil
 	 * parse the request's header and put them in request
 	 * (including cookies)
 	 * Also,it needs to parse those headers which ServletRequest
+	 * Attention: this method didnt add any validation of header names
 	 * interface required(e.g Content-Type)
 	 * @param input the input stream holds byte array for request header
 	 * @param request the request to be wrapped
@@ -112,8 +115,24 @@ public class HttpRequestUtil
 		{
 			int i = str.indexOf(':');
 			String name = str.substring(0, i);
-			String value = str.substring(i+1);
+			String value = str.substring(i+2);
+			if(name.equals(CONTENT_TYPE))
+			{
+				request.setContentType(value);
+			}
+			else if(name.equals(CONTENT_LENGTH))
+			{
+				request.setContentLength(Long.valueOf(value));
+			}
+			else if(name.equals(COOKIE))
+			{
+				
+			}
+			else
+			{
+				request.setHeader(name, value);
+			}
 		}
-		
+		//TODO:check more needed header fields
 	}
 }

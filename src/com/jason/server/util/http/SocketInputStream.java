@@ -95,8 +95,8 @@ public class SocketInputStream extends InputStream
 	}
 	
 	/**
-	 * 
-	 * @return
+	 * read headers from socket's inputStream
+	 * @return list of Strings for util methods
 	 */
 	public List<String> readHeaders() 
 	{

@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.security.Principal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -51,6 +53,10 @@ public class MyServletRequest implements HttpServletRequest
 	protected ArrayList<Cookie> cookies = new ArrayList<>();//transform to array when user call getter
 	protected InputStream input;
 	protected boolean requestedSessionIdFromURL;
+	protected Map<String,Object> attributes = new HashMap<String,Object>();
+	protected String contentType;
+	protected Long contentLength = -1L;
+	protected String characterEncoding;
 	
 	@Override
 	public AsyncContext getAsyncContext() {
@@ -60,38 +66,37 @@ public class MyServletRequest implements HttpServletRequest
 
 	@Override
 	public Object getAttribute(String arg0) {
-		// TODO Auto-generated method stub
-		return null;
+		return attributes.get(arg0);
 	}
 
 	@Override
 	public Enumeration<String> getAttributeNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return new AttributeNameEnum(attributes);
 	}
 
 	@Override
 	public String getCharacterEncoding() {
-		// TODO Auto-generated method stub
+		// TODO : to get character encoding from content type  
 		return null;
 	}
 
 	@Override
 	public int getContentLength() {
-		// TODO Auto-generated method stub
-		return 0;
+		if(contentLength>Integer.MAX_VALUE)
+		{
+			return -1;
+		}
+		return contentLength.intValue();
 	}
 
 	@Override
 	public long getContentLengthLong() {
-		// TODO Auto-generated method stub
-		return 0;
+		return contentLength;
 	}
 
 	@Override
 	public String getContentType() {
-		// TODO Auto-generated method stub
-		return null;
+		return contentType;
 	}
 
 	@Override
@@ -137,26 +142,27 @@ public class MyServletRequest implements HttpServletRequest
 
 	@Override
 	public String getParameter(String arg0) {
-		// TODO Auto-generated method stub
+		String[] rs = parameterMap.get(arg0);
+		if(rs!=null)
+		{
+			return rs[0];
+		}
 		return null;
 	}
 
 	@Override
 	public Map<String, String[]> getParameterMap() {
-		// TODO Auto-generated method stub
-		return null;
+		return parameterMap;
 	}
 
 	@Override
 	public Enumeration<String> getParameterNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return new ParameterNameEnum(parameterMap);
 	}
 
 	@Override
 	public String[] getParameterValues(String arg0) {
-		// TODO Auto-generated method stub
-		return null;
+		return parameterMap.get(arg0);
 	}
 
 	@Override
@@ -244,21 +250,27 @@ public class MyServletRequest implements HttpServletRequest
 
 	@Override
 	public void removeAttribute(String arg0) {
-		// TODO Auto-generated method stub
-
+		attributes.remove(arg0);
 	}
 
 	@Override
 	public void setAttribute(String arg0, Object arg1) {
-		// TODO Auto-generated method stub
-
+		attributes.put(arg0, arg1);
 	}
 
 	@Override
 	public void setCharacterEncoding(String arg0)
-			throws UnsupportedEncodingException {
-		// TODO Auto-generated method stub
-
+			throws UnsupportedEncodingException 
+	{
+		try
+		{
+			Charset.forName(arg0);	//check if legal
+		}
+		catch(UnsupportedCharsetException e)
+		{
+			throw new UnsupportedEncodingException(arg0);
+		}
+		this.characterEncoding = arg0;
 	}
 
 	@Override
@@ -587,6 +599,17 @@ public class MyServletRequest implements HttpServletRequest
 		cookies.add(cookie);
 	}
 	
+	public void setContentLength(long length)
+	{
+		this.contentLength = length;
+	}
+	
+	public void setContentType(String type)
+	{
+		this.contentType = type;
+	}
+	
+	
 	//////////////////package-own classes///////////////////
 	
 	class NameEnumerator implements Enumeration<String>
@@ -654,5 +677,44 @@ public class MyServletRequest implements HttpServletRequest
 		public String nextElement() {
 			return iter.next();
 		}
+	}
+	
+	class ParameterNameEnum implements Enumeration<String>
+	{
+		Iterator<String> iter;
+		ParameterNameEnum(Map<String,String[]> parMap)
+		{
+			iter = parMap.keySet().iterator();
+		}
+		@Override
+		public boolean hasMoreElements() {
+			return iter.hasNext();
+		}
+
+		@Override
+		public String nextElement() {
+			return iter.next();
+		}
+		
+	}
+	
+	class AttributeNameEnum implements Enumeration<String>
+	{
+		Iterator<String> iter;
+		
+		AttributeNameEnum(Map<String,Object> map)
+		{
+			iter = map.keySet().iterator();
+		}
+		@Override
+		public boolean hasMoreElements() {
+			return iter.hasNext();
+		}
+
+		@Override
+		public String nextElement() {
+			return iter.next();
+		}
+		
 	}
 }
