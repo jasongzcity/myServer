@@ -54,24 +54,23 @@ public class HttpProcessor
 			input = new SocketInputStream(socket.getInputStream(),2048);
 			output = socket.getOutputStream();
 			MyServletRequest request = new MyServletRequest();//own-create class to be wrapped
-			request.setInputStream(input);
+			request.setInputStream(input);//parse until the fields got called
 //			response = new HttpResponse(output);
 //			
 //			response.setRequest(request);
 //			response.setHeader("Server","Jason's Server");
 			
-			HttpRequestUtil.parseRequestLine(input,output,request);
-			HttpRequestUtil.parseHeaders(input,request);
+			//HttpRequestUtil.parseRequestLine(input,output,request);
+			//HttpRequestUtil.parseHeaders(input,request);
 			
 			httpServletRequest =new HttpServletRequestWrapper(request);
 			
-			//snippet below is taken from HttpServer1
 			if(httpServletRequest.getRequestURI().startsWith("/servlet/"))	//calling servlet
 			{
 				ServletProcessor1 servletProcessor = new ServletProcessor1();
 				//servletProcessor.process(request,response);
 			}
-			else			//request for static resource
+			else
 			{
 				StaticResourceProcessor staticProcessor = new StaticResourceProcessor();
 				//staticProcessor.process(request,response);

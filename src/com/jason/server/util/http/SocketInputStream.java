@@ -2,6 +2,7 @@ package com.jason.server.util.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,11 +11,10 @@ import com.jason.server.util.ByteHelper;
 import com.jason.server.util.exception.InvalidRequestException;
 
 /**
- * this class handle the socket's InputStream 
- * and parse the request for the processor
+ * this class directly reads the socket's InputStream 
+ * and do simple parsing for request's util method 
  * @author lwz
- * @since JDK1.8
- * should use a requestProcessor later....
+ * @since 2016-8-4 
  */
 public class SocketInputStream extends InputStream
 {
@@ -23,6 +23,7 @@ public class SocketInputStream extends InputStream
 	private int headerEnd;
 	private boolean hasContent;
 	private InputStream in;
+	protected Charset defaultCharset = StandardCharsets.ISO_8859_1;
 	
 	/**
 	 * the constructor reads the inputstream and wrap the bytes in bytebuffer
@@ -82,16 +83,11 @@ public class SocketInputStream extends InputStream
 			throw new InvalidRequestException();
 		}
 		requestLineEnd = i;
-		String target = new String(byteBuffer,0,i,StandardCharsets.ISO_8859_1);
-		String[] arr = target.split(" ");
-		if(arr.length!=3)
-		{
-			throw new InvalidRequestException("request line error");
-		}
-		requestLine.method = arr[0];
-		requestLine.uri = arr[1];
-		requestLine.protocol = arr[2];
-		requestLine.setWholeLine(target);
+		int methodEnd = ByteHelper.indexOf(byteBuffer, ByteHelper.SPACE, 0);
+		requestLine.method = new String(byteBuffer,0,methodEnd,defaultCharset);
+		int uriEnd = ByteHelper.indexOf(byteBuffer, ByteHelper.SPACE, methodEnd+1);//find uri String
+		requestLine.uri = new String(byteBuffer,methodEnd,uriEnd-methodEnd,defaultCharset);
+		requestLine.protocol = new String(byteBuffer,uriEnd+1,requestLineEnd-uriEnd-1,defaultCharset);
 	}
 	
 	/**

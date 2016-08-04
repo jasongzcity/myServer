@@ -9,6 +9,8 @@ public class ByteHelper
 {
 	public final static byte[] CRLF = {13,10};
 	
+	public final static byte SPACE = 32;
+	
 	private ByteHelper(){}
 	
 	/**
@@ -60,6 +62,39 @@ public class ByteHelper
 				return i;
 			}
 			i++;
+		}
+		return -1;
+	}
+	
+	public static int findBytes(byte[] src,byte[] target)
+	{
+		return findBytes(src,0,target);
+	}
+	
+	/**
+	 * To find a byte sequence in source byte array
+	 * @param src source byte array
+	 * @param begin the begin index of source array
+	 * @param target the target sequence you wants to find
+	 * @return the index of first match byte. Or -1 if not matches.
+	 * Note: no need to use KMP.....
+	 */
+	public static int findBytes(byte[] src,int begin,byte[] target)
+	{
+		int i = begin;
+		while(i<src.length)
+		{
+			for(int j=0,k=i;j<target.length;j++,k++)
+			{
+				if(target[j]!=src[k])
+				{
+					break;
+				}
+				else if(j==target.length-1) //matches
+				{
+					return i;
+				}
+			}
 		}
 		return -1;
 	}

@@ -21,6 +21,8 @@ public class HttpRequestUtil
 	
 	public final static String COOKIE = "Cookie";
 	
+	public final static String HOST = "Host";
+	
 	//No instantiate
 	private HttpRequestUtil(){}
 	
@@ -32,10 +34,12 @@ public class HttpRequestUtil
 	 * @param output 
 	 * @throws InvalidRequestException to close the socket
 	 */
-	public static void parseRequestLine(SocketInputStream input,OutputStream output,MyServletRequest request) throws InvalidRequestException
+	public static void parseRequestLine(MyServletRequest request) throws InvalidRequestException
 	{
 		HttpRequestLine requestLine = new HttpRequestLine();
-		try {//to deal with the InputStream's IOException
+		SocketInputStream input = request.getSocketStream();
+		try {
+			//to deal with the InputStream's IOException
 			input.readRequestLine(requestLine);
 		} catch (IOException e) {
 			try {
@@ -98,25 +102,25 @@ public class HttpRequestUtil
 	 * parse the request's header and put them in request
 	 * (including cookies)
 	 * Also,it needs to parse those headers which ServletRequest
-	 * Attention: this method didnt add any validation of header names
-	 * interface required(e.g Content-Type)
 	 * @param input the input stream holds byte array for request header
 	 * @param request the request to be wrapped
+     * @throws InvalidRequestException 
 	 */
-	public static void parseHeaders(SocketInputStream input,MyServletRequest request)
+	public static void parseHeaders(MyServletRequest request) throws InvalidRequestException
 	{
 		/*
 		 *  Tomcat's codes which deals with request's headers & cookies are far too complicated..
 		 *  Do it in a simpler way to deal with the most common headers.
 		 *  Other throws an exception.
 		 */
+		SocketInputStream input = request.getSocketStream();
 		List<String> rawHeaders = input.readHeaders();
 		for(String str : rawHeaders)
 		{
 			int i = str.indexOf(':');
 			String name = str.substring(0, i);
 			String value = str.substring(i+2);
-			if(name.equals(CONTENT_TYPE))
+			if(name.equals(CONTENT_TYPE))//will need to get character encoding from content-type further
 			{
 				request.setContentType(value);
 			}
@@ -128,11 +132,20 @@ public class HttpRequestUtil
 			{
 				
 			}
+			else if(name.equals(HOST))
+			{
+				String[] target = value.split(":");
+				if(target.length!=2)
+				{
+					throw new InvalidRequestException();
+				}
+				request.setServerName(target[0]);
+				request.setServerPort(Integer.valueOf(target[1]));
+			}
 			else
 			{
 				request.setHeader(name, value);
 			}
 		}
-		//TODO:check more needed header fields
 	}
 }

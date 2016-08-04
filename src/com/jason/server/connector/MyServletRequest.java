@@ -35,6 +35,7 @@ import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
 import com.jason.server.util.ParameterMap;
+import com.jason.server.util.http.SocketInputStream;
 
 /**
  * simple implementation of HttpServletRequest
@@ -51,12 +52,17 @@ public class MyServletRequest implements HttpServletRequest
 	protected String queryString;
 	protected String requestSessionId;
 	protected ArrayList<Cookie> cookies = new ArrayList<>();//transform to array when user call getter
-	protected InputStream input;
+	protected SocketInputStream input;
 	protected boolean requestedSessionIdFromURL;
 	protected Map<String,Object> attributes = new HashMap<String,Object>();
 	protected String contentType;
 	protected Long contentLength = -1L;
 	protected String characterEncoding;
+	protected int serverPort = 0;
+	protected String serverName;
+	protected boolean isRequestLineParsed;
+	protected boolean isHeaderParsed;
+	protected boolean isCookieParsed;
 	
 	@Override
 	public AsyncContext getAsyncContext() {
@@ -214,14 +220,12 @@ public class MyServletRequest implements HttpServletRequest
 
 	@Override
 	public String getServerName() {
-		// TODO Auto-generated method stub
-		return null;
+		return serverName;
 	}
 
 	@Override
 	public int getServerPort() {
-		// TODO Auto-generated method stub
-		return 0;
+		return serverPort;
 	}
 
 	@Override
@@ -539,7 +543,7 @@ public class MyServletRequest implements HttpServletRequest
 	}
 	
 	//setter
-	public void setInputStream(InputStream in)
+	public void setInputStream(SocketInputStream in)
 	{
 		this.input = in;
 	}
@@ -609,6 +613,19 @@ public class MyServletRequest implements HttpServletRequest
 		this.contentType = type;
 	}
 	
+	public void setServerName(String name)
+	{
+		this.serverName = name;
+	}
+	public void setServerPort(int port)
+	{
+		this.serverPort = port;
+	}
+	
+	public SocketInputStream getSocketStream()
+	{
+		return input;
+	}
 	
 	//////////////////package-own classes///////////////////
 	
