@@ -2,9 +2,9 @@ package com.jason.server.connector;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.Principal;
 import java.text.ParseException;
@@ -34,35 +34,35 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
+import com.jason.server.util.ByteHelper;
 import com.jason.server.util.ParameterMap;
 import com.jason.server.util.http.SocketInputStream;
 
 /**
  * simple implementation of HttpServletRequest
+ * 
  * @author lwz
- * @since JDK1.8
+ * @since 2016-8-4 
  */
 public class MyServletRequest implements HttpServletRequest 
 {
 	protected Map<String,Object> headers = new HashMap<String,Object>();
-	protected ParameterMap<String,String[]> parameterMap = new ParameterMap<>();
+	protected Map<String,List<String>> parameterMap = new HashMap<>();
 	protected String method;
 	protected String protocol;
 	protected String requestUri;
 	protected String queryString;
 	protected String requestSessionId;
 	protected ArrayList<Cookie> cookies = new ArrayList<>();//transform to array when user call getter
-	protected SocketInputStream input;
+	protected SocketInputStream input;//underlying socket's inputStream
 	protected boolean requestedSessionIdFromURL;
 	protected Map<String,Object> attributes = new HashMap<String,Object>();
 	protected String contentType;
 	protected Long contentLength = -1L;
-	protected String characterEncoding;
+	protected String characterEncoding;//null if not parse,parse from content-type
 	protected int serverPort = 0;
 	protected String serverName;
-	protected boolean isRequestLineParsed;
-	protected boolean isHeaderParsed;
-	protected boolean isCookieParsed;
+	protected boolean isParameterParsed;
 	
 	@Override
 	public AsyncContext getAsyncContext() {
@@ -82,8 +82,7 @@ public class MyServletRequest implements HttpServletRequest
 
 	@Override
 	public String getCharacterEncoding() {
-		// TODO : to get character encoding from content type  
-		return null;
+		return characterEncoding;
 	}
 
 	@Override
@@ -148,27 +147,59 @@ public class MyServletRequest implements HttpServletRequest
 
 	@Override
 	public String getParameter(String arg0) {
-		String[] rs = parameterMap.get(arg0);
+		if(!isParameterParsed)
+		{
+			parseParameter();
+		}
+		List<String> rs = parameterMap.get(arg0);
 		if(rs!=null)
 		{
-			return rs[0];
+			return rs.get(0);
 		}
 		return null;
 	}
 
 	@Override
 	public Map<String, String[]> getParameterMap() {
-		return parameterMap;
+		if(!isParameterParsed)
+		{
+			parseParameter();
+		}
+		String[] arr = null;
+		ParameterMap<String, String[]> rs = new ParameterMap<>();
+		rs.setLockMode(true);
+		for(String key:parameterMap.keySet())
+		{
+			List<String> list = parameterMap.get(key);
+			arr = new String[list.size()];
+			list.toArray(arr);
+			rs.put(key, arr);
+		}
+		rs.setLockMode(false);
+		return rs;
 	}
 
 	@Override
 	public Enumeration<String> getParameterNames() {
+		if(!isParameterParsed)
+		{
+			parseParameter();
+		}
 		return new ParameterNameEnum(parameterMap);
 	}
 
 	@Override
 	public String[] getParameterValues(String arg0) {
-		return parameterMap.get(arg0);
+		if(!isParameterParsed)
+		{
+			parseParameter();
+		}
+		if(!parameterMap.containsKey(arg0))
+		{
+			return null;
+		}
+		return (String[])parameterMap.get(arg0).toArray();
+		
 	}
 
 	@Override
@@ -542,7 +573,7 @@ public class MyServletRequest implements HttpServletRequest
 		return null;
 	}
 	
-	//setter
+	///////////setter//////////////
 	public void setInputStream(SocketInputStream in)
 	{
 		this.input = in;
@@ -626,6 +657,67 @@ public class MyServletRequest implements HttpServletRequest
 	{
 		return input;
 	}
+	public void setParameter(String key,String value)
+	{
+		List<String> list = parameterMap.get(key);
+		if(list!=null)
+		{
+			list.add(value);
+		}
+		else
+		{
+			list = new ArrayList<String>();//default capacity
+			list.add(value);
+			parameterMap.put(key, list);
+		}
+	}
+	///////////private method////////////
+	private void parseParameter()
+	{
+		//TODO:parse parameter from body -- read protocol....
+		parseParamFromQuery();
+	}
+	
+	private void parseParamFromQuery()
+	{
+		if(characterEncoding==null)
+		{
+			parseEncoding();
+		}
+		if(characterEncoding==null)
+		{
+			characterEncoding = StandardCharsets.UTF_8.aliases().iterator().next();//get One of the alias
+		}
+		byte[] temp = queryString.getBytes(StandardCharsets.ISO_8859_1);//Http Standard Charsets
+		//may need to parse parameters using header request charset instead of ISO
+		int begin = 0;
+		int and = -1;
+		int equal = -1;
+		while(begin<temp.length)
+		{
+			equal = ByteHelper.indexOf(temp, ByteHelper.EQUAL, begin);
+			if(equal<0)
+			{
+				break;
+			}
+			and = ByteHelper.indexOf(temp, ByteHelper.AND, equal+1);
+			if(and<0)
+			{
+				break;
+			}
+		}
+	}
+	
+	private void parseEncoding()
+	{
+		String cs = "charset=";
+		int i = contentType.indexOf(cs);
+		if(i<0)
+		{
+			return;
+		}
+		characterEncoding = contentType.substring(i+cs.length());
+	}
 	
 	//////////////////package-own classes///////////////////
 	
@@ -699,7 +791,7 @@ public class MyServletRequest implements HttpServletRequest
 	class ParameterNameEnum implements Enumeration<String>
 	{
 		Iterator<String> iter;
-		ParameterNameEnum(Map<String,String[]> parMap)
+		ParameterNameEnum(Map<String,List<String>> parMap)
 		{
 			iter = parMap.keySet().iterator();
 		}

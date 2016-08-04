@@ -7,6 +7,7 @@ import java.net.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 
+import com.jason.server.simpleContainer.Response;
 import com.jason.server.simpleContainer.ServletProcessor1;
 import com.jason.server.simpleContainer.StaticResourceProcessor;
 import com.jason.server.util.exception.InvalidRequestException;
@@ -25,10 +26,11 @@ public class HttpProcessor
 {	
 	////////////instance's fields/////////
 	
-	HttpServletRequest httpServletRequest = null;
-//	private HttpResponse response = null;
+	private HttpServletRequest httpServletRequest = null;
+	private HttpServletRequest httpServletResponse = null;
 	private HttpConnector connector = null;
-	
+	MyServletRequest request = new MyServletRequest();
+	MyServletResponse response = new MyServletResponse();
 	/**
 	 * Constructor.
 	 * Wrap the connector
@@ -55,13 +57,13 @@ public class HttpProcessor
 			output = socket.getOutputStream();
 			MyServletRequest request = new MyServletRequest();//own-create class to be wrapped
 			request.setInputStream(input);//parse until the fields got called
-//			response = new HttpResponse(output);
-//			
-//			response.setRequest(request);
-//			response.setHeader("Server","Jason's Server");
+			//response = new Response(output);
 			
-			//HttpRequestUtil.parseRequestLine(input,output,request);
-			//HttpRequestUtil.parseHeaders(input,request);
+			//response.setRequest(request);
+			//response.setHeader("Server","Jason's Server");
+			
+			HttpRequestUtil.parseRequestLine(request);
+			HttpRequestUtil.parseHeaders(request);
 			
 			httpServletRequest =new HttpServletRequestWrapper(request);
 			

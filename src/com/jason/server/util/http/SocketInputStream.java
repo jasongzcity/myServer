@@ -19,11 +19,17 @@ import com.jason.server.util.exception.InvalidRequestException;
 public class SocketInputStream extends InputStream
 {
 	protected byte[] byteBuffer;
-	private int requestLineEnd;
-	private int headerEnd;
-	private boolean hasContent;
+	private int requestLineEnd = -1;
+	private int headerEnd = -1;
+	private int posi = -1;
+	private boolean hasBody;
 	private InputStream in;
 	protected Charset defaultCharset = StandardCharsets.ISO_8859_1;
+	public void setDefaultCharset(Charset charset)
+	{
+		this.defaultCharset = charset;
+	}
+	public Charset getDefaultCharset(){ return defaultCharset; }
 	
 	/**
 	 * the constructor reads the inputstream and wrap the bytes in bytebuffer
@@ -77,12 +83,10 @@ public class SocketInputStream extends InputStream
 	 */
 	public void readRequestLine(HttpRequestLine requestLine) throws InvalidRequestException, IOException
 	{
-		int i = ByteHelper.checkNextCRLF(byteBuffer, 0);
-		if(i==-1)
+		if(requestLineEnd==-1)
 		{
-			throw new InvalidRequestException();
+			findRequestLineEnd();
 		}
-		requestLineEnd = i;
 		int methodEnd = ByteHelper.indexOf(byteBuffer, ByteHelper.SPACE, 0);
 		requestLine.method = new String(byteBuffer,0,methodEnd,defaultCharset);
 		int uriEnd = ByteHelper.indexOf(byteBuffer, ByteHelper.SPACE, methodEnd+1);//find uri String
@@ -93,10 +97,15 @@ public class SocketInputStream extends InputStream
 	/**
 	 * read headers from socket's inputStream
 	 * @return list of Strings for util methods
+	 * @throws InvalidRequestException 
 	 */
-	public List<String> readHeaders() 
+	public List<String> readHeaders() throws InvalidRequestException 
 	{
-		int i = requestLineEnd+2;//skip CRLF
+		int i = 0;
+		if(requestLineEnd == -1)
+		{
+			findRequestLineEnd();
+		}
 		List<String> list = new ArrayList<>();
 		while(true)
 		{
@@ -104,22 +113,32 @@ public class SocketInputStream extends InputStream
 			if(head==-1)
 			{
 				headerEnd = i;
-				hasContent = false;
+				hasBody = false;
 				break;
 			}
 			else if(byteBuffer[head+2]==ByteHelper.CRLF[0])//header end and empty line
 			{
 				headerEnd = i;
-				hasContent = true;
-				list.add(new String(byteBuffer,i,head-i,StandardCharsets.ISO_8859_1));
+				hasBody = true;
+				list.add(new String(byteBuffer,i,head-i,defaultCharset));
 				break;
 			}
 			else//still has headers
 			{
-				list.add(new String(byteBuffer,i,head-i,StandardCharsets.ISO_8859_1));
+				list.add(new String(byteBuffer,i,head-i,defaultCharset));
 			}
 			i = head+2;
 		}
 		return list;
+	}
+	
+	private void findRequestLineEnd() throws InvalidRequestException
+	{
+		int i = ByteHelper.checkNextCRLF(byteBuffer, 0);
+		if(i==-1)
+		{
+			throw new InvalidRequestException();
+		}
+		requestLineEnd = i;
 	}
 }

@@ -36,7 +36,7 @@ public class ServletProcessor1
 			e.printStackTrace();
 		}
 		
-		Class myClass = null;
+		Class<?> myClass = null;
 		try
 		{
 			myClass = classLoader.loadClass(servletName);
@@ -53,7 +53,7 @@ public class ServletProcessor1
 		}
 		catch(Throwable t)
 		{
-			System.out.println(t);
+			t.printStackTrace();
 		}
 	}
 }

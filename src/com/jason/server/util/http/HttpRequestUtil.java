@@ -1,10 +1,11 @@
 package com.jason.server.util.http;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import com.jason.server.connector.MyServletRequest;
+import com.jason.server.util.ByteHelper;
 import com.jason.server.util.exception.InvalidRequestException;
 
 /**
@@ -130,7 +131,7 @@ public class HttpRequestUtil
 			}
 			else if(name.equals(COOKIE))
 			{
-				
+				parseCookies(value,request);
 			}
 			else if(name.equals(HOST))
 			{
@@ -146,6 +147,35 @@ public class HttpRequestUtil
 			{
 				request.setHeader(name, value);
 			}
+		}
+	}
+	
+	/**
+	 * parse the cookies.
+	 * @param value the String of value of  "Cookie" Header
+	 * @param request the lower level encapsulation of http request
+	 */
+	public static void parseCookies(String value,MyServletRequest request)
+	{
+		byte[] temp = value.getBytes(request.getSocketStream().getDefaultCharset());
+		int semicolon = -1;
+		int equal = -1;
+		int begin = 0;
+		while(begin<temp.length)
+		{//ignore case with temp[0] = '='
+			equal = ByteHelper.indexOf(temp, ByteHelper.EQUAL, begin);
+			if(equal<0)
+			{
+				break;//parsing end
+			}
+			semicolon = ByteHelper.indexOf(temp, ByteHelper.SEMICOLON, equal+1);
+			if(semicolon<0)
+			{
+				break;//end
+			}
+			request.setCookie(new String(temp,begin,equal-begin,StandardCharsets.ISO_8859_1),
+					new String(temp,equal+1,semicolon-equal-1,StandardCharsets.ISO_8859_1));
+			begin = semicolon+1;
 		}
 	}
 }

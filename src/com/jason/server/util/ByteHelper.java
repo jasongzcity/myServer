@@ -11,6 +11,14 @@ public class ByteHelper
 	
 	public final static byte SPACE = 32;
 	
+	public final static byte EQUAL = 61;
+	
+	public final static byte AND = 38;
+	
+	public final static byte COLON = 58;
+	
+	public final static byte SEMICOLON = 59;
+	
 	private ByteHelper(){}
 	
 	/**
