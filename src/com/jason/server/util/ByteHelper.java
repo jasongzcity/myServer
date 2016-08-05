@@ -106,4 +106,38 @@ public class ByteHelper
 		}
 		return -1;
 	}
+	
+	/**
+	 * Note: use cautiously. heavy
+	 * @param src the source byte array 
+	 * @return the byte array which trims the SPACE(' ')
+	 * of the source  array.
+	 */
+	public static byte[] trim(byte[] src)
+	{
+		int trimBegin = -1;
+		int trimEnd = -1;
+		int begin = 0;
+		int end = src.length-1;
+		while((trimBegin==-1||trimEnd==-1)&&(begin<end))//scan condition
+		{
+			if(src[begin]!=ByteHelper.SPACE && trimBegin==-1)//Not record 
+			{
+				trimBegin = begin;
+			}
+			if(src[end]!=ByteHelper.SPACE && trimEnd == -1)
+			{
+				trimEnd = end;
+			}
+			begin++;
+			end--;
+		}
+		if(trimBegin==0&&trimEnd==src.length-1)//No need to trim
+		{
+			return src;
+		}
+		byte[] rs = new byte[trimEnd-trimBegin+1];
+		System.arraycopy(src, trimBegin, rs, 0, rs.length);
+		return rs;
+	}
 }

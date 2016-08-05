@@ -64,7 +64,7 @@ public class SocketInputStream extends InputStream
 		byteBuffer = buffer;
 		System.out.println(new String(byteBuffer));
 		/*
-		 * TODO:later change it to the nio to support the socket.
+		 * TODO:later change it to the Nio to support the socket.
 		 */
 	}
 	

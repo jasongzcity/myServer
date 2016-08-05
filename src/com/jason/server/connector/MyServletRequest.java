@@ -39,7 +39,7 @@ import com.jason.server.util.ParameterMap;
 import com.jason.server.util.http.SocketInputStream;
 
 /**
- * simple implementation of HttpServletRequest
+ * lower level implementation of HttpServletRequest
  * 
  * @author lwz
  * @since 2016-8-4 
@@ -686,7 +686,7 @@ public class MyServletRequest implements HttpServletRequest
 		}
 		if(characterEncoding==null)
 		{
-			characterEncoding = StandardCharsets.UTF_8.aliases().iterator().next();//get One of the alias
+			characterEncoding = StandardCharsets.UTF_8.name();//get One of the alias
 		}
 		byte[] temp = queryString.getBytes(StandardCharsets.ISO_8859_1);//Http Standard Charsets
 		//may need to parse parameters using header request charset instead of ISO
@@ -698,18 +698,33 @@ public class MyServletRequest implements HttpServletRequest
 			equal = ByteHelper.indexOf(temp, ByteHelper.EQUAL, begin);
 			if(equal<0)
 			{
-				break;
+				break;//skip last key-value
 			}
 			and = ByteHelper.indexOf(temp, ByteHelper.AND, equal+1);
-			if(and<0)
+			if(and<0)//queryString end
 			{
-				break;
+				and = temp.length-1;
 			}
+			try {
+				setParameter(new String(temp,begin,equal-begin,characterEncoding),
+						new String(temp,equal+1,and-equal-1,characterEncoding));
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			}
+			begin = and+1;
 		}
 	}
 	
+	/*
+	 *  This method must be called after the ContentType
+	 *  has been setted.
+	 */
 	private void parseEncoding()
 	{
+		if(contentType==null)
+		{
+			return;
+		}
 		String cs = "charset=";
 		int i = contentType.indexOf(cs);
 		if(i<0)

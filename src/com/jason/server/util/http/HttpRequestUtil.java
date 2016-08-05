@@ -31,8 +31,7 @@ public class HttpRequestUtil
 	/**
 	 * the private method for processor to parse 
 	 * the request's request line and set the properties of HttpRequest object
-	 * @param input SocketInputStream wrapping socket's inputstream
-	 * @param output 
+	 * @param request the lower level encapsulation of http request
 	 * @throws InvalidRequestException to close the socket
 	 */
 	public static void parseRequestLine(MyServletRequest request) throws InvalidRequestException
@@ -103,8 +102,7 @@ public class HttpRequestUtil
 	 * parse the request's header and put them in request
 	 * (including cookies)
 	 * Also,it needs to parse those headers which ServletRequest
-	 * @param input the input stream holds byte array for request header
-	 * @param request the request to be wrapped
+	 * @param request the lower level encapsulation of http request
      * @throws InvalidRequestException 
 	 */
 	public static void parseHeaders(MyServletRequest request) throws InvalidRequestException

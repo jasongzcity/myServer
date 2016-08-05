@@ -11,7 +11,6 @@ import com.jason.server.simpleContainer.Response;
 import com.jason.server.simpleContainer.ServletProcessor1;
 import com.jason.server.simpleContainer.StaticResourceProcessor;
 import com.jason.server.util.exception.InvalidRequestException;
-import com.jason.server.util.http.HttpRequestLine;
 import com.jason.server.util.http.HttpRequestUtil;
 import com.jason.server.util.http.SocketInputStream;
 
@@ -55,8 +54,9 @@ public class HttpProcessor
 		{
 			input = new SocketInputStream(socket.getInputStream(),2048);
 			output = socket.getOutputStream();
+			//later could use a socket wrapper
 			MyServletRequest request = new MyServletRequest();//own-create class to be wrapped
-			request.setInputStream(input);//parse until the fields got called
+			request.setInputStream(input);													//parse until the fields got called
 			//response = new Response(output);
 			
 			//response.setRequest(request);
