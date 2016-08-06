@@ -28,8 +28,8 @@ public class HttpProcessor
 	private HttpServletRequest httpServletRequest = null;
 	private HttpServletRequest httpServletResponse = null;
 	private HttpConnector connector = null;
-	MyServletRequest request = new MyServletRequest();
-	MyServletResponse response = new MyServletResponse();
+	protected MyServletRequest request = new MyServletRequest();
+	protected MyServletResponse response;
 	/**
 	 * Constructor.
 	 * Wrap the connector
@@ -55,9 +55,8 @@ public class HttpProcessor
 			input = new SocketInputStream(socket.getInputStream(),2048);
 			output = socket.getOutputStream();
 			//later could use a socket wrapper
-			MyServletRequest request = new MyServletRequest();//own-create class to be wrapped
 			request.setInputStream(input);													//parse until the fields got called
-			//response = new Response(output);
+			response = new MyServletResponse(output);
 			
 			//response.setRequest(request);
 			//response.setHeader("Server","Jason's Server");

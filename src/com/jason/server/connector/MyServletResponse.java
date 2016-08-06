@@ -2,12 +2,14 @@ package com.jason.server.connector;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
@@ -18,23 +20,28 @@ import javax.servlet.http.HttpServletResponse;
  * @author lwz
  * @since 2016-8-5 
  */
-public class MyServletResponse implements HttpServletResponse 
+public final class MyServletResponse implements HttpServletResponse 
 {
-	protected String characterEncoding;
-	protected boolean isCharsetSet;//charset explicitly setted
-	protected boolean isCommited;
-	protected String contentType;
-	protected WriteStatus writeStatus = WriteStatus.NOTUSED;
-	protected OutputStream out;//wrapped by ServletOutputStream or PrintWriter
-	protected ServletOutputStream sout;
-	protected PrintWriter writer;
-	protected Locale locale;
-	protected Long contentLength = -1L;
-	protected ByteBuffer headerBuffer;//store header
+	private String characterEncoding;
+	private boolean isCharsetSet;//charset explicitly setted
+	private boolean isCommited;
+	private String contentType;
+	private WriteStatus writeStatus = WriteStatus.NOTUSED;
+	//protected OutputStream out;//No direct operation
+	private ServletOutputStream sout;
+	private PrintWriter writer;
+	private Locale locale;
+	private Long contentLength = -1L;
+	private ByteBuffer responseLine;//store response line
+	private OutputBuffer ob;	   // this gives direct control of buffer
+															   // also,wrap in ServletOutputStream or PrintWriter for 
+															   // abstract read/write operation on http body
+	private final List<Cookie> cookies = new ArrayList<>();
+	private Map<String,List<String>> headers;
 	
-	public void setOutputStream(OutputStream out)
+	public MyServletResponse(OutputStream out)
 	{
-		this.out = out;
+		this.ob = new OutputBuffer(out,this);//Setup OutputBuffer
 	}
 	
 	/**
@@ -42,8 +49,7 @@ public class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void flushBuffer() throws IOException {
-		// TODO Auto-generated method stub
-
+		ob.flush();
 	}
 
 	/**
@@ -51,8 +57,7 @@ public class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public int getBufferSize() {
-		// TODO Auto-generated method stub
-		return 0;
+		return ob.capacity();
 	}
 
 	/**
@@ -98,7 +103,7 @@ public class MyServletResponse implements HttpServletResponse
 			return sout;
 		}
 		//writeStatus == NONE
-		sout = new MyServletOutputStream(out,this);
+		sout = new MyServletOutputStream(ob);
 		writeStatus = WriteStatus.USINGOUTPUT;
 		return sout;
 	}
@@ -118,8 +123,7 @@ public class MyServletResponse implements HttpServletResponse
 		{
 			throw new IllegalStateException();
 		}
-		String cs = getCharacterEncoding();
-		writer = new PrintWriter(new OutputStreamWriter(out,cs));
+		writer = new MyServletWriter(ob);
 		writeStatus = WriteStatus.USINGWRITER;
 		return writer;
 	}
@@ -142,8 +146,13 @@ public class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void reset() {
-		// TODO Auto-generated method stub
-
+		if(isCommited)
+		{
+			throw new IllegalStateException();
+		}
+		responseLine.clear();
+		headers.clear();
+		ob.resetBuffer();
 	}
 
 	/**
@@ -151,17 +160,24 @@ public class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void resetBuffer() {
-		// TODO Auto-generated method stub
-
+		if(isCommited)
+		{
+			throw new IllegalStateException();
+		}
+		ob.resetBuffer();
 	}
 
 	/**
 	 * @see javax.servlet.ServletResponse#setBufferSize(int)
 	 */
 	@Override
-	public void setBufferSize(int arg0) {
-		// TODO Auto-generated method stub
-
+	public void setBufferSize(int arg0) 
+	{
+		if(ob.isBufferWritten()||isCommited)
+		{
+			throw new IllegalStateException();
+		}
+		ob.setBufferSize(arg0);
 	}
 
 	/**
@@ -170,7 +186,11 @@ public class MyServletResponse implements HttpServletResponse
 	@Override
 	public void setCharacterEncoding(String arg0) 
 	{
-		this.characterEncoding = arg0;
+		if(writeStatus!=WriteStatus.NOTUSED||isCommited)//writting has begun,unable to change character encoding
+		{
+			return;
+		}
+		characterEncoding = arg0;
 		isCharsetSet = true;
 	}
 
@@ -180,7 +200,7 @@ public class MyServletResponse implements HttpServletResponse
 	@Override
 	public void setContentLength(int arg0) 
 	{	
-		this.contentLength = (long) arg0;
+		contentLength = (long) arg0;
 	}
 
 	/**
@@ -189,7 +209,7 @@ public class MyServletResponse implements HttpServletResponse
 	@Override
 	public void setContentLengthLong(long arg0) 
 	{
-		this.contentLength = arg0;
+		contentLength = arg0;
 	}
 
 	/**
@@ -197,11 +217,7 @@ public class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void setContentType(String arg0) {
-		this.contentType = arg0;
-		if(!isCharsetSet)
-		{
-			parseCsFromContent();
-		}
+		this.contentType = arg0;//add "charset" at the point of sendHeader 
 	}
 
 	/**
@@ -217,10 +233,13 @@ public class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void addCookie(Cookie arg0) {
-		// TODO Auto-generated method stub
-
+		if(isCommited)
+		{
+			return;
+		}
+		cookies.add(arg0);//bytes will be generated in #sendHeaders
 	}
-
+	
 	/**
 	 * @see javax.servlet.http.HttpServletResponse#addDateHeader(java.lang.String, long)
 	 */
@@ -253,8 +272,7 @@ public class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public boolean containsHeader(String arg0) {
-		// TODO Auto-generated method stub
-		return false;
+		return headers.containsKey(arg0);
 	}
 
 	/**
@@ -361,8 +379,7 @@ public class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void setDateHeader(String arg0, long arg1) {
-		// TODO Auto-generated method stub
-
+		
 	}
 
 	/**
