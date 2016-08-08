@@ -7,13 +7,18 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+
+import com.jason.server.util.http.DateFormatter;
 
 /**
  * lower level implementation of HttpServletResponse
@@ -37,7 +42,7 @@ public final class MyServletResponse implements HttpServletResponse
 															   // also,wrap in ServletOutputStream or PrintWriter for 
 															   // abstract read/write operation on http body
 	private final List<Cookie> cookies = new ArrayList<>();
-	private Map<String,List<String>> headers;
+	private Map<String,Object> headers  = new HashMap<String,Object>();
 	
 	public MyServletResponse(OutputStream out)
 	{
@@ -105,6 +110,8 @@ public final class MyServletResponse implements HttpServletResponse
 		//writeStatus == NONE
 		sout = new MyServletOutputStream(ob);
 		writeStatus = WriteStatus.USINGOUTPUT;
+		prepareCharset();//making sure response has a charsetEncoding 
+											   //for the body.Parse from ContentType or default UTF-8.
 		return sout;
 	}
 
@@ -125,6 +132,8 @@ public final class MyServletResponse implements HttpServletResponse
 		}
 		writer = new MyServletWriter(ob);
 		writeStatus = WriteStatus.USINGWRITER;
+		prepareCharset();//making sure response has a charsetEncoding 
+											   //for the body.Parse from ContentType or default UTF-8.
 		return writer;
 	}
 
@@ -191,7 +200,7 @@ public final class MyServletResponse implements HttpServletResponse
 			return;
 		}
 		characterEncoding = arg0;
-		isCharsetSet = true;
+		setCharsetSet(true);
 	}
 
 	/**
@@ -244,18 +253,49 @@ public final class MyServletResponse implements HttpServletResponse
 	 * @see javax.servlet.http.HttpServletResponse#addDateHeader(java.lang.String, long)
 	 */
 	@Override
-	public void addDateHeader(String arg0, long arg1) {
-		// TODO Auto-generated method stub
-
+	public void addDateHeader(String arg0, long arg1) 
+	{
+		String date = DateFormatter.formatDate(arg1,null);
+		addHeader(arg0,date);
 	}
 
 	/**
+	 * Note: according to servlet API, {@link #addHeader(String, String)}should not overwrite
+	 * the previous API, while {@link #setHeader(String, String)} should overwrite the previous API.
+	 * 
 	 * @see javax.servlet.http.HttpServletResponse#addHeader(java.lang.String, java.lang.String)
+	 * @see #setHeader(String, String)
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void addHeader(String arg0, String arg1) {
-		// TODO Auto-generated method stub
-
+		if(isCommited)
+		{
+			return;
+		}
+		if(headers.containsKey(arg0))
+		{
+			Object tmp = headers.get(arg0);
+			if(tmp instanceof String)//transfer String to List
+			{
+				List<String> list = new ArrayList<>();
+				list.add((String) tmp);
+				list.add(arg1);
+				headers.put(arg0, list);
+			}
+			else if(tmp instanceof List)	//Already a list
+			{
+				((List<String>)tmp).add(arg1);
+			}
+			else
+			{
+				throw new IllegalStateException("Cant add headers with different types");
+			}
+		}
+		else
+		{
+			headers.put(arg0, arg1);
+		}
 	}
 
 	/**
@@ -263,8 +303,8 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void addIntHeader(String arg0, int arg1) {
-		// TODO Auto-generated method stub
-
+		String intValue = String.valueOf(arg1);
+		addHeader(arg0,intValue);
 	}
 
 	/**
@@ -280,7 +320,6 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public String encodeRedirectURL(String arg0) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -289,7 +328,7 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public String encodeRedirectUrl(String arg0) {
-		// TODO Auto-generated method stub
+		// deprecated
 		return null;
 	}
 
@@ -298,7 +337,6 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public String encodeURL(String arg0) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -307,17 +345,27 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public String encodeUrl(String arg0) {
-		// TODO Auto-generated method stub
+		//deprecated
 		return null;
 	}
 
 	/**
 	 * @see javax.servlet.http.HttpServletResponse#getHeader(java.lang.String)
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public String getHeader(String arg0) {
-		// TODO Auto-generated method stub
-		return null;
+		Object tmp = headers.get(arg0);
+		String rs = null;
+		if(tmp instanceof List)
+		{
+			rs = ((List<String>)tmp).get(0);
+		}
+		else
+		{
+			rs = (String)tmp;
+		}
+		return rs;
 	}
 
 	/**
@@ -325,17 +373,23 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public Collection<String> getHeaderNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return headers.keySet();
 	}
 
 	/**
 	 * @see javax.servlet.http.HttpServletResponse#getHeaders(java.lang.String)
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public Collection<String> getHeaders(String arg0) {
-		// TODO Auto-generated method stub
-		return null;
+		Object tmp = headers.get(arg0);
+		if(tmp instanceof List)
+		{
+			return (Collection<String>)tmp;
+		}
+		List<String> list = new ArrayList<>();
+		list.add((String)tmp);
+		return list;
 	}
 
 	/**
@@ -379,7 +433,8 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void setDateHeader(String arg0, long arg1) {
-		
+		String date = DateFormatter.formatDate(arg1, null);//using standard date formatter
+		setHeader(arg0,date);
 	}
 
 	/**
@@ -387,8 +442,7 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void setHeader(String arg0, String arg1) {
-		// TODO Auto-generated method stub
-
+		headers.put(arg0, arg1);
 	}
 
 	/**
@@ -396,8 +450,7 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void setIntHeader(String arg0, int arg1) {
-		// TODO Auto-generated method stub
-
+		headers.put(arg0, String.valueOf(arg1));
 	}
 
 	/**
@@ -418,13 +471,29 @@ public final class MyServletResponse implements HttpServletResponse
 
 	}
 	
+	public boolean isCharsetSet() {
+		return isCharsetSet;
+	}
+
+	public void setCharsetSet(boolean isCharsetSet) {
+		this.isCharsetSet = isCharsetSet;
+	}
+	
 	public void sendHeaders()
 	{
 		
 	}
 	
+	/**
+	 * entrance to end this reponse.
+	 */
+	public void commit()
+	{
+		
+	}
+	
 	//-----------------------------private method---------------//
-	private void parseCsFromContent()
+	public void parseCsFromContent()
 	{
 		if(contentType==null)
 		{
@@ -439,7 +508,20 @@ public final class MyServletResponse implements HttpServletResponse
 		characterEncoding = contentType.substring(index+cs.length());
 	}
 	
-	
+	private void prepareCharset()
+	{
+		if(!isCharsetSet()) //using explicitly set charset
+		{
+			parseCsFromContent();
+			if(characterEncoding==null)
+			{
+				characterEncoding = StandardCharsets.UTF_8.name();//using utf-8 as default
+			}
+		}
+		isCharsetSet = true;
+	}
+
+
 	//------------------------------Inner class--------------------//
 	/*
 	 * Indicate the status of 

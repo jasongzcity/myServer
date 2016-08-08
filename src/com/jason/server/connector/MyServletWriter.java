@@ -12,10 +12,8 @@ import java.io.Writer;
  */
 public class MyServletWriter extends PrintWriter 
 {
-	
 	public MyServletWriter(Writer out) {
 		super(out);//no autoflush
 		//PrintWriter use Writer#write
 	}
-
 }

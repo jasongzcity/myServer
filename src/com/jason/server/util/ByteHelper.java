@@ -37,10 +37,11 @@ public class ByteHelper
 			{
 				return -1;
 			}
-			else if(src[i+1]==CRLF[1])//Not match,keep searching
+			else if(src[i+1]==CRLF[1])
 			{
 				return i;
 			}
+			//Not match,keep searching
 		}
 	}
 	
