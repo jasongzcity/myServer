@@ -82,4 +82,20 @@ public final class DateFormatter
     	}
     	return d.getTime();
     }
+    
+    public static String getCurrentDate(SimpleDateFormat sdf)
+    {
+    	Date date = new Date();
+    	if(sdf==null)
+    	{
+    		synchronized(STANDARD_FORMAT)
+    		{
+    			return STANDARD_FORMAT.format(date);
+    		}
+    	}
+    	else
+    	{
+    		return sdf.format(date);
+    	}
+    }
 }

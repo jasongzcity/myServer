@@ -50,7 +50,6 @@ public class HttpConnector implements Runnable
 			try
 			{
 				socket = serverSocket.accept();
-				
 			}
 			catch(IOException e)
 			{
@@ -58,7 +57,18 @@ public class HttpConnector implements Runnable
 			}
 			//Hand this socket off to HttpProcessor
 			HttpProcessor processor = new HttpProcessor(this);
-			processor.process(socket);
+			try
+			{
+				processor.process(socket);
+			}
+			catch(Exception e)
+			{
+				try {
+					socket.close();
+				} catch (IOException e1) {
+					
+				}
+			}
 		}//while
 	}
 	

@@ -3,21 +3,22 @@ package com.jason.server.connector;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
+import com.jason.server.util.ByteHelper;
+import com.jason.server.util.exception.InvalidResponseException;
 import com.jason.server.util.http.DateFormatter;
 
 /**
@@ -37,12 +38,16 @@ public final class MyServletResponse implements HttpServletResponse
 	private PrintWriter writer;
 	private Locale locale;
 	private Long contentLength = -1L;
-	private ByteBuffer responseLine;//store response line
-	private OutputBuffer ob;	   // this gives direct control of buffer
-															   // also,wrap in ServletOutputStream or PrintWriter for 
-															   // abstract read/write operation on http body
-	private final List<Cookie> cookies = new ArrayList<>();
+	private int status = -1; //status code
+	private String message;//reponse message in 1st line
+	private OutputBuffer ob;// this gives direct control of buffer
+														 // also,wrap in ServletOutputStream or PrintWriter for 
+													    // abstract read/write operation on http body
+	private List<Cookie> cookies = new ArrayList<>();
 	private Map<String,Object> headers  = new HashMap<String,Object>();
+	private String protocol = "HTTP/1.1"; //default protocol
+	private boolean isError;
+	public static final Charset CS_USCII = StandardCharsets.US_ASCII; 
 	
 	public MyServletResponse(OutputStream out)
 	{
@@ -159,7 +164,8 @@ public final class MyServletResponse implements HttpServletResponse
 		{
 			throw new IllegalStateException();
 		}
-		responseLine.clear();
+		status = -1;
+		setMessage(null);
 		headers.clear();
 		ob.resetBuffer();
 	}
@@ -394,11 +400,11 @@ public final class MyServletResponse implements HttpServletResponse
 
 	/**
 	 * @see javax.servlet.http.HttpServletResponse#getStatus()
+	 * @return the status code. -1 if not set. 
 	 */
 	@Override
 	public int getStatus() {
-		// TODO Auto-generated method stub
-		return 0;
+		return status;
 	}
 
 	/**
@@ -406,17 +412,23 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void sendError(int arg0) throws IOException {
-		// TODO Auto-generated method stub
-
+		sendError(arg0,null);
 	}
 
 	/**
 	 * @see javax.servlet.http.HttpServletResponse#sendError(int, java.lang.String)
 	 */
 	@Override
-	public void sendError(int arg0, String arg1) throws IOException {
-		// TODO Auto-generated method stub
-
+	public void sendError(int arg0, String arg1) throws IOException,IllegalStateException {
+		if(isCommited)
+		{
+			throw new IllegalStateException();
+		}
+		resetBuffer();//clearing buffer but keep headers and cookies
+		setError(true);//using error page.
+		setStatus(arg0);
+		setMessage(null);
+		commit();
 	}
 
 	/**
@@ -424,7 +436,7 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void sendRedirect(String arg0) throws IOException {
-		// TODO Auto-generated method stub
+		// TODO Read "redirect"
 
 	}
 
@@ -458,8 +470,7 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void setStatus(int arg0) {
-		// TODO Auto-generated method stub
-
+		this.status = arg0;
 	}
 
 	/**
@@ -467,7 +478,7 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void setStatus(int arg0, String arg1) {
-		// TODO Auto-generated method stub
+		//Deprecated
 
 	}
 	
@@ -479,21 +490,108 @@ public final class MyServletResponse implements HttpServletResponse
 		this.isCharsetSet = isCharsetSet;
 	}
 	
-	public void sendHeaders()
+	public String getProtocol() {
+		return protocol;
+	}
+
+	public void setProtocol(String protocol) {
+		this.protocol = protocol;
+	}
+
+	public boolean isError() {
+		return isError;
+	}
+
+	public void setError(boolean isError) {
+		this.isError = isError;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
+	}
+	
+	//-----------send methods------------//
+	
+	private void sendFirstLine() throws InvalidResponseException
 	{
-		
+		ob.realWriteBytes(protocol.getBytes(CS_USCII));
+		ob.realWriteSpace();
+		if(status>599||status<100)
+		{
+			throw new InvalidResponseException();
+		}
+		ob.realWriteBytes(String.valueOf(status).getBytes(CS_USCII));//writing status code
+		ob.realWriteSpace();
+		ob.realWriteBytes(message.getBytes(CS_USCII));
+		ob.realWriteCRLF();
+	}
+	
+	/*
+	 * this method is responsible for parsing Strings and write bytes to OutputBuffer.
+	 * send headers & cookies
+	 * TODO: 8-12 finish send header & send error 
+	 */
+	@SuppressWarnings("unchecked")
+	private void sendHeaders() throws InvalidResponseException
+	{
+		for(Entry<String,Object> node:headers.entrySet())
+		{
+			ob.realWriteBytes(node.getKey().getBytes(CS_USCII));
+			ob.realWriteByte(ByteHelper.COLON);
+			ob.realWriteByte(ByteHelper.SPACE);
+			Object value = node.getValue();
+			if(value instanceof String)
+			{
+				ob.realWriteBytes(((String) value).getBytes(CS_USCII));
+			}
+			else if(value instanceof List)
+			{
+				List<String> list = (List<String>)value;
+				for(int i=0;i<list.size();i++)
+				{
+					ob.realWriteBytes(list.get(i).getBytes(CS_USCII));
+					if(i<list.size()-1)
+					{
+						ob.realWriteByte(ByteHelper.COMMA);
+						ob.realWriteByte(ByteHelper.SPACE);
+					}
+				}
+			}
+			else
+			{
+				throw new InvalidResponseException();
+			}
+			ob.realWriteCRLF();
+		}
+		checkSpecialHeader();
+		ob.realWriteCRLF();//line that separate header and body 
 	}
 	
 	/**
-	 * entrance to end this reponse.
+	 * entrance to end this reponse. 
 	 */
 	public void commit()
 	{
-		
+		try {
+			sendFirstLine();
+			sendHeaders();
+		} catch (InvalidResponseException e) {
+			try {
+				ob.close();
+			} catch (IOException e1) {
+
+			}
+		}
+		setCommited(true);
 	}
 	
-	//-----------------------------private method---------------//
-	public void parseCsFromContent()
+	//----------private methods--------//
+	
+	private void parseCsFromContent()
 	{
 		if(contentType==null)
 		{
@@ -520,13 +618,18 @@ public final class MyServletResponse implements HttpServletResponse
 		}
 		isCharsetSet = true;
 	}
+	
+	private void checkSpecialHeader()
+	{
+		
+	}
 
 
 	//------------------------------Inner class--------------------//
 	/*
 	 * Indicate the status of 
 	 */
-	protected enum WriteStatus
+	static enum WriteStatus
 	{
 		USINGWRITER,
 		USINGOUTPUT,

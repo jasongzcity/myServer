@@ -99,9 +99,9 @@ public class HttpRequestUtil
 	}
 	
     /**
-	 * parse the request's header and put them in request
-	 * (including cookies)
-	 * Also,it needs to parse those headers which ServletRequest
+	 *  parse the request's header and put them in request
+	 *  (including cookies)
+	 *  Also,it needs to parse those headers which ServletRequest
 	 * @param request the lower level encapsulation of http request
      * @throws InvalidRequestException 
 	 */
@@ -143,7 +143,10 @@ public class HttpRequestUtil
 			}
 			else
 			{
-				request.setHeader(name, value);
+				for(String v : value.split(","))
+				{
+					request.setHeader(name, v);
+				}
 			}
 		}
 	}

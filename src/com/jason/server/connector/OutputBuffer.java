@@ -6,6 +6,8 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 
+import com.jason.server.util.ByteHelper;
+
 /**
  * Standard output for response
  * create lower level of buffered output 
@@ -39,6 +41,7 @@ public class OutputBuffer extends Writer
 		byteBuffer = ByteBuffer.allocate(size);
 	}
 	
+	//write methods,write bytes to byteBuffer,for ServletOutputStreams and PrintWriter
 	/*
 	 *  Writer use this method 
 	 *  its expensive ... arraycopy * 2
@@ -121,13 +124,53 @@ public class OutputBuffer extends Writer
 		byteBuffer.clear();//reset position
 	}
 	
-	//commit the response.prepare for response and setCommited
+	//----------------------output methods,direct write to socket----------//
+	
+	//methods for reponse to write headers
+	public void realWriteBytes(byte[] src,int off,int len)
+	{
+		try {
+			out.write(src, off, len);
+		} catch (IOException e) {
+			//Ignore.. client may get a "broken" response
+			e.printStackTrace();
+		}
+	}
+	
+	public void realWriteByte(byte src)
+	{
+		try {
+			out.write(src);
+		} catch (IOException e) {
+			//Ignore
+			e.printStackTrace();
+		}
+	}
+	
+	public void realWriteCRLF()
+	{
+		realWriteBytes(ByteHelper.CRLF);
+	}
+	
+	public void  realWriteBytes(byte[] src)
+	{
+		realWriteBytes(src,0,src.length);
+	}
+	
+	public void realWriteSpace()
+	{
+		realWriteByte(ByteHelper.SPACE);
+	}
+	
+	//-----------------private methods-------------------//
+	
+	//write byteBuffer to socket
 	private void doFlush()
 	{
 		
 	}
-	
-	protected void checkBuffer()
+
+	private void checkBuffer()
 	{
 		if(!isBufferWritten && byteBuffer==null)
 		{

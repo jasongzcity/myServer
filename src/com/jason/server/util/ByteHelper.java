@@ -19,6 +19,8 @@ public class ByteHelper
 	
 	public final static byte SEMICOLON = 59;
 	
+	public final static byte COMMA = 44;
+	
 	private ByteHelper(){}
 	
 	/**
