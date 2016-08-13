@@ -3,10 +3,12 @@ package com.jason.server.connector;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -18,6 +20,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
 import com.jason.server.util.ByteHelper;
+import com.jason.server.util.HTMLHelper;
 import com.jason.server.util.exception.InvalidResponseException;
 import com.jason.server.util.http.DateFormatter;
 
@@ -39,7 +42,8 @@ public final class MyServletResponse implements HttpServletResponse
 	private Locale locale;
 	private Long contentLength = -1L;
 	private int status = -1; //status code
-	private String message;//reponse message in 1st line
+	//private String message;//According to RFC 7230 client should ignore reason phrase
+	
 	private OutputBuffer ob;// this gives direct control of buffer
 														 // also,wrap in ServletOutputStream or PrintWriter for 
 													    // abstract read/write operation on http body
@@ -47,6 +51,8 @@ public final class MyServletResponse implements HttpServletResponse
 	private Map<String,Object> headers  = new HashMap<String,Object>();
 	private String protocol = "HTTP/1.1"; //default protocol
 	private boolean isError;
+	private boolean isRedirect;
+	private String redirectURL;//should be absolute URL 
 	public static final Charset CS_USCII = StandardCharsets.US_ASCII; 
 	
 	public MyServletResponse(OutputStream out)
@@ -165,7 +171,6 @@ public final class MyServletResponse implements HttpServletResponse
 			throw new IllegalStateException();
 		}
 		status = -1;
-		setMessage(null);
 		headers.clear();
 		ob.resetBuffer();
 	}
@@ -261,13 +266,13 @@ public final class MyServletResponse implements HttpServletResponse
 	@Override
 	public void addDateHeader(String arg0, long arg1) 
 	{
-		String date = DateFormatter.formatDate(arg1,null);
+		String date = DateFormatter.formatDate(arg1,null);//using standard date formatter
 		addHeader(arg0,date);
 	}
 
 	/**
 	 * Note: according to servlet API, {@link #addHeader(String, String)}should not overwrite
-	 * the previous API, while {@link #setHeader(String, String)} should overwrite the previous API.
+	 * the previous datas, while {@link #setHeader(String, String)} should overwrite the previous datas.
 	 * 
 	 * @see javax.servlet.http.HttpServletResponse#addHeader(java.lang.String, java.lang.String)
 	 * @see #setHeader(String, String)
@@ -326,7 +331,8 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public String encodeRedirectURL(String arg0) {
-		return null;
+		//TODO: write a URL encoder & decoder
+		return arg0;
 	}
 
 	/**
@@ -335,7 +341,7 @@ public final class MyServletResponse implements HttpServletResponse
 	@Override
 	public String encodeRedirectUrl(String arg0) {
 		// deprecated
-		return null;
+		return encodeRedirectURL(arg0);
 	}
 
 	/**
@@ -343,7 +349,8 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public String encodeURL(String arg0) {
-		return null;
+		//TODO: write a URL encoder & decoder
+		return arg0;
 	}
 
 	/**
@@ -352,7 +359,7 @@ public final class MyServletResponse implements HttpServletResponse
 	@Override
 	public String encodeUrl(String arg0) {
 		//deprecated
-		return null;
+		return encodeURL(arg0);
 	}
 
 	/**
@@ -427,17 +434,17 @@ public final class MyServletResponse implements HttpServletResponse
 		resetBuffer();//clearing buffer but keep headers and cookies
 		setError(true);//using error page.
 		setStatus(arg0);
-		setMessage(null);
-		commit();
+		ob.flush();
 	}
 
 	/**
 	 * @see javax.servlet.http.HttpServletResponse#sendRedirect(java.lang.String)
 	 */
 	@Override
-	public void sendRedirect(String arg0) throws IOException {
-		// TODO Read "redirect"
-
+	public void sendRedirect(String location) throws IOException {
+		this.redirectURL = location;
+		setRedirect(true);
+		ob.flush();
 	}
 
 	/**
@@ -506,12 +513,12 @@ public final class MyServletResponse implements HttpServletResponse
 		this.isError = isError;
 	}
 
-	public String getMessage() {
-		return message;
+	public boolean isRedirect() {
+		return isRedirect;
 	}
 
-	public void setMessage(String message) {
-		this.message = message;
+	public void setRedirect(boolean isRedirect) {
+		this.isRedirect = isRedirect;
 	}
 	
 	//-----------send methods------------//
@@ -526,18 +533,20 @@ public final class MyServletResponse implements HttpServletResponse
 		}
 		ob.realWriteBytes(String.valueOf(status).getBytes(CS_USCII));//writing status code
 		ob.realWriteSpace();
-		ob.realWriteBytes(message.getBytes(CS_USCII));
+		
+		//ignore useless reason phrase on purpose
+		
 		ob.realWriteCRLF();
 	}
 	
 	/*
 	 * this method is responsible for parsing Strings and write bytes to OutputBuffer.
 	 * send headers & cookies
-	 * TODO: 8-12 finish send header & send error 
 	 */
 	@SuppressWarnings("unchecked")
 	private void sendHeaders() throws InvalidResponseException
 	{
+		checkSpecialHeader();//check headers before send
 		for(Entry<String,Object> node:headers.entrySet())
 		{
 			ob.realWriteBytes(node.getKey().getBytes(CS_USCII));
@@ -561,14 +570,13 @@ public final class MyServletResponse implements HttpServletResponse
 					}
 				}
 			}
-			else
+			else //neither String nor List
 			{
 				throw new InvalidResponseException();
 			}
 			ob.realWriteCRLF();
 		}
-		checkSpecialHeader();
-		ob.realWriteCRLF();//line that separate header and body 
+		ob.realWriteCRLF();//line that separates headers and body 
 	}
 	
 	/**
@@ -577,13 +585,15 @@ public final class MyServletResponse implements HttpServletResponse
 	public void commit()
 	{
 		try {
+			writeSpecialBody();//Currently error
 			sendFirstLine();
 			sendHeaders();
 		} catch (InvalidResponseException e) {
 			try {
 				ob.close();
 			} catch (IOException e1) {
-
+				//Ignore IOException
+				//even if sending error messages
 			}
 		}
 		setCommited(true);
@@ -619,13 +629,114 @@ public final class MyServletResponse implements HttpServletResponse
 		isCharsetSet = true;
 	}
 	
-	private void checkSpecialHeader()
+	//check if any important header missing
+	//for now: Content-Type,Content-Length,
+	//Server and Date.Also,consider the headers when sending 
+	//ERROR or REDIRECT
+	private void checkSpecialHeader() throws InvalidResponseException
 	{
-		
+		if(isError)//Sending error 
+		{
+			setHeader("Content-Type","text/html; charset=utf-8");//default error page format utf-8
+		}
+		else if(isRedirect)//No content
+		{
+			setHeader("Location",redirectURL);
+			setHeader("Content-Length","0");
+		}
+		else	//Normal response,check Content* headers
+		{
+			if(contentLength==-1L)     //Not set
+			{
+				if(!ob.isBufferWritten()) //No bytes written
+				{
+					setHeader("Content-Length","0");
+				}
+				else
+				{
+					setHeader("Content-Length",String.valueOf(ob.bytesWrittern()));
+				}
+			}
+			if(contentType==null&&(!isRedirect || ob.isBufferWritten()))//must set contentType
+			{
+				throw new InvalidResponseException("must set content type");
+			}
+			if(contentType!=null)//if user setting charset in content type different from character encoding may leads to error
+			{
+				if(!contentType.contains("charset="))
+				{
+					contentType += "; charset="+ characterEncoding;
+				}
+				setHeader("Content-Type",contentType);
+			}
+		}
+		//check general missing headers
+		if(!headers.containsKey("Date"))
+		{
+			setHeader("Date",DateFormatter.STANDARD_FORMAT.format(new Date()));
+		}
+		if(!headers.containsKey("Server"))
+		{
+			setHeader("Server","MyServer V0.1");
+		}
+		if(!headers.containsKey("Connection"))//do not support keep-alive temporarily
+		{
+			setHeader("Connection","close");
+		}
 	}
-
-
-	//------------------------------Inner class--------------------//
+	
+	//fast route writing error page to client
+	private void writeSpecialBody()
+	{
+		if(isError)
+		{
+			if(!ob.isBufferWritten())
+			{
+				setBufferSize(512);
+			}
+			else
+			{
+				resetBuffer();
+			}
+			writeErrorPage();
+		}
+	}
+	
+	/*
+	 * This method exposes lower level detail.
+	 * However I can't find a better way :-(
+	 * write error page in USCII(compliant with UTF-8)
+	 */
+	private void writeErrorPage()
+	{
+		//Direct write buffer??
+		ByteBuffer buffer = ob.byteBuffer;
+		buffer.put(HTMLHelper.ELE_HTML_BYTE);
+		buffer.put(ByteHelper.CRLF[0]);//'\r'
+		buffer.put(HTMLHelper.ELE_HEAD_BYTE);
+		buffer.put(HTMLHelper.ELE_TITLE_BYTE);
+		buffer.put(String.valueOf(status).getBytes(CS_USCII));
+		buffer.put(HTMLHelper.ELE_TITLE_END_BYTE);
+		buffer.put(HTMLHelper.ELE_HEAD_END_BYTE);
+		buffer.put(ByteHelper.CRLF[0]);
+		buffer.put(HTMLHelper.ELE_BODY_BYTE);
+		buffer.put(ByteHelper.CRLF[0]);
+		buffer.put("<h1>".getBytes(CS_USCII));
+		buffer.put(String.valueOf(status).getBytes(CS_USCII));
+		buffer.put("</h1>".getBytes(CS_USCII));
+		buffer.put(HTMLHelper.HR_BYTE);
+		buffer.put(ByteHelper.CRLF[0]);
+		buffer.put(HTMLHelper.ELE_CENTER_BYTE);
+		buffer.put("MyServer V0.1".getBytes(CS_USCII));
+		buffer.put(HTMLHelper.ELE_CENTER_END_BYTE);
+		buffer.put(HTMLHelper.ELE_BODY_END_BYTE);
+		buffer.put(HTMLHelper.ELE_HTML_END_BYTE);
+		setHeader("Content-Length",String.valueOf(ob.bytesWrittern()));
+	}
+	
+	
+	
+	//--------------------------Inner class--------------------//
 	/*
 	 * Indicate the status of 
 	 */

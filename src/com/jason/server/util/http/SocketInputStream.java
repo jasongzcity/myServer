@@ -19,6 +19,7 @@ import com.jason.server.util.exception.InvalidRequestException;
 public class SocketInputStream extends InputStream
 {
 	protected byte[] byteBuffer;
+	private int length;
 	private int requestLineEnd = -1;
 	private int headerEnd = -1;
 	private int posi = -1;
@@ -39,6 +40,18 @@ public class SocketInputStream extends InputStream
 	public SocketInputStream(InputStream in,int length)
 	{
 		this.in = in;
+		this.length = length;
+		init();
+		/*
+		 * TODO:later change it to the nio to support the socket.
+		 */
+	}
+	
+	//init method may need to rewrite: 
+	//it works like: bulk reading the whole http message and later parse it. 
+	//it does not have a mechanism of validate bad request
+	private void init()
+	{
 		int i = 0;
 		int posi = 0;
 		byte[] buffer = new byte[length];
@@ -47,7 +60,8 @@ public class SocketInputStream extends InputStream
 			try {	
 				i = in.read(buffer,posi,length);//read from the posi and 'length' bytes every time
 			} catch (IOException e) {
-				e.printStackTrace();
+				//TODO: add logging warning
+				continue;
 			}
 			if(i<length)//to the end..
 			{
@@ -62,10 +76,7 @@ public class SocketInputStream extends InputStream
 			}
 		}
 		byteBuffer = buffer;
-		System.out.println(new String(byteBuffer));
-		/*
-		 * TODO:later change it to the Nio to support the socket.
-		 */
+		System.out.println(new String(byteBuffer));//TODO:change to logging
 	}
 	
 	@Override

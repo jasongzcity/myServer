@@ -43,7 +43,7 @@ public class HttpConnector implements Runnable
 			e.printStackTrace();
 			System.exit(1);
 		}
-		System.out.println("server socket bind success");
+		System.out.println("server socket bind success");//TODO:use a logger
 		while(!stopped)
 		{
 			Socket socket = null;

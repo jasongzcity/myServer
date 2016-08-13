@@ -87,7 +87,8 @@ public class OutputBuffer extends Writer
 	public void flush() throws IOException 
 	{
 		response.commit();
-		doFlush();
+		flushBody();
+		out.close();
 	}
 
 	@Override
@@ -121,7 +122,18 @@ public class OutputBuffer extends Writer
 	
 	public void resetBuffer()
 	{
+		if(byteBuffer==null)
+		{
+			return;
+		}
 		byteBuffer.clear();//reset position
+	}
+	
+	//since writing from the index 0
+	//the position represents the bytes have been written
+	public int bytesWrittern()
+	{
+		return byteBuffer.position();
 	}
 	
 	//----------------------output methods,direct write to socket----------//
@@ -165,9 +177,14 @@ public class OutputBuffer extends Writer
 	//-----------------private methods-------------------//
 	
 	//write byteBuffer to socket
-	private void doFlush()
+	private void flushBody() throws IOException
 	{
-		
+		if(response.isRedirect())
+		{
+			//no need to write byte buffer
+			return;
+		}
+		out.write(byteBuffer.array(), 0, byteBuffer.position());//write byte array
 	}
 
 	private void checkBuffer()
