@@ -25,7 +25,7 @@ public class SocketInputStream extends InputStream
 	private int posi = -1;
 	private boolean hasBody;
 	private InputStream in;
-	protected Charset defaultCharset = StandardCharsets.ISO_8859_1;
+	protected Charset defaultCharset = StandardCharsets.US_ASCII;
 	public void setDefaultCharset(Charset charset)
 	{
 		this.defaultCharset = charset;

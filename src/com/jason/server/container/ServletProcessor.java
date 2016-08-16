@@ -1,4 +1,4 @@
-package com.jason.server.simpleContainer;
+package com.jason.server.container;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -7,14 +7,14 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-import com.jason.server.container.HttpServer;
-
-public class ServletProcessor1
+public class ServletProcessor
 {
-	public void process(Request request,Response response)
+	public void process(HttpServletRequest request,HttpServletResponse response)
 	{
-		String uri = request.getUri();
+		String uri = request.getRequestURI();
 		String servletName = uri.substring(uri.lastIndexOf("/")+1);//get the servletname
 		URLClassLoader classLoader = null;
 		try

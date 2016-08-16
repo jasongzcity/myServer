@@ -1,7 +1,9 @@
 package com.jason.server.connector;
 
+import com.jason.server.container.HttpServer;
+
 /**
-  * The entrance. Starts the  server
+  * The entrance. Starts the server
   * @author lwz
   * @since 2016-7-27
   */
@@ -9,15 +11,19 @@ public final class Bootstrap
 {
 	public static void main(String[] args)
 	{
-		HttpConnector connector = null;
+		HttpServer server = null;
 		if(args.length>0)
 		{
-			connector = new HttpConnector(Integer.parseInt(args[0]));
+			server = new HttpServer(Integer.parseInt(args[0]));
 		}
 		else
 		{
-			connector = new HttpConnector();
+			server = new HttpServer();
 		}
-		connector.start();
+		
+		server.init();
+		server.start();
+		server.await();
+		server.shutdown();
 	}
 }

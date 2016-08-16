@@ -6,11 +6,11 @@ import java.net.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 
-import com.jason.server.simpleContainer.Response;
-import com.jason.server.simpleContainer.ServletProcessor1;
-import com.jason.server.simpleContainer.StaticResourceProcessor;
-import com.jason.server.util.exception.InvalidRequestException;
+import com.jason.server.container.ServletProcessor;
+import com.jason.server.container.StaticResourceProcessor;
 import com.jason.server.util.http.HttpRequestUtil;
 import com.jason.server.util.http.SocketInputStream;
 
@@ -18,16 +18,16 @@ import com.jason.server.util.http.SocketInputStream;
   * This processor is like the class HttpServer1 in some way.They 
   * parse the request Uri and then decide handle it to servlet processor 
   * or static processor.Also,it parses the request's first line and header.
-  * @author Jason
+  * @author lwz
   * @since JDK1.8
   */
 public class HttpProcessor
 {	
 	////////////instance's fields/////////
 	
-	private HttpServletRequest httpServletRequest = null;
-	private HttpServletRequest httpServletResponse = null;
-	private HttpConnector connector = null;
+	private HttpServletRequest httpServletRequest;
+	private HttpServletResponse httpServletResponse;
+	private HttpConnector connector;
 	protected MyServletRequest request = new MyServletRequest();
 	protected MyServletResponse response;
 	/**
@@ -54,21 +54,26 @@ public class HttpProcessor
 		{
 			input = new SocketInputStream(socket.getInputStream(),2048);
 			output = socket.getOutputStream();
-			//later could use a socket wrapper
-			request.setInputStream(input);													//parse until the fields got called
+			
+			//later could use a socket wrapper,to screen lower level detail
+			request.setInputStream(input);	//parse until the fields got called
 			response = new MyServletResponse(output);
 			
-			//response.setRequest(request);
-			//response.setHeader("Server","Jason's Server");
+			response.setRequest(request);
 			
 			HttpRequestUtil.parseRequestLine(request);
 			HttpRequestUtil.parseHeaders(request);
 			
+			//wrapper object
 			httpServletRequest =new HttpServletRequestWrapper(request);
+			httpServletResponse = new HttpServletResponseWrapper(response);
 			
+			//easy resource mapping ;-)
+			//only provide service for servlet & html
 			if(httpServletRequest.getRequestURI().startsWith("/servlet/"))	//calling servlet
 			{
-				ServletProcessor1 servletProcessor = new ServletProcessor1();
+				//TODO: make processors recycled to avoid GC
+				ServletProcessor servletProcessor = new ServletProcessor();
 				//servletProcessor.process(request,response);
 			}
 			else

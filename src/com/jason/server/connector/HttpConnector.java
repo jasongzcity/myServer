@@ -4,78 +4,120 @@ import java.net.*;
 import java.io.IOException;
 
 /**
-  * In this module,the HttpConnector in charge of creating a new thread and building 
-  * a serversocket upon it.In addition,this module did not create a stop method for the 
-  * application so user have to shutdown the server manually(by closing the commandline
-  * or stopping the thread.
-  * @author Jason
+  * HttpConnector in charge of connecting the client.
+  * Create threads to accept client requests and  hand them to 
+  * processors.
+  * @author lwz
   * @since JDK1.8
   */
-public class HttpConnector implements Runnable
+public class HttpConnector
 {
-	private boolean stopped = false;	//flag
-	private String schema = "http"; 	//handle http request
-	//default 8080
-	private int port = 8080;
+	//TODO: reuse HttpProcessors
+	private boolean stopped;	//flag
+	private String schema = "Http"; 	//handle http request
+	
+	private int port;
+	private ServerSocket serverSocket;
+	
+	//Default two acceptors
+	private int acceptorCount = 2;
+	private Acceptor[] acceptors;
 	
 	public HttpConnector(int port)
 	{
 		this.port = port;
 	}
 	
-	public HttpConnector(){}
-	
 	public String getSchema()
 	{
 		return schema;
 	}
 	
-	@Override
-	public void run()
+	public boolean isStopped()
 	{
-		ServerSocket serverSocket = null;
+		return stopped;
+	}
+	
+	public void setStopped(boolean stopped)
+	{
+		this.stopped = stopped;
+	}
+	
+	public void init()
+	{
 		try
 		{
-		 	serverSocket = new ServerSocket(port,1,InetAddress.getByName("127.0.0.1"));//binding
+			serverSocket = new ServerSocket(port,1,InetAddress.getByName("127.0.0.1"));
 		}
-		catch(IOException e)
+		catch(Exception e)
 		{
-			e.printStackTrace();
-			System.exit(1);
+			//TODO: logger 
+			System.exit(-1);
 		}
-		System.out.println("server socket bind success");//TODO:use a logger
-		while(!stopped)
+	}
+	
+	protected Acceptor createAcceptor()
+	{
+		return new Acceptor();
+	}
+	
+	public void startup()
+	{
+		acceptors = new Acceptor[acceptorCount];
+		for(int i=0;i<acceptors.length;i++)
 		{
-			Socket socket = null;
-			try
+			acceptors[i] = createAcceptor();
+			String threadName = "Acceptor-"+i;
+			Thread t = new Thread(acceptors[i],threadName);
+			t.start();
+		}
+		//TODO:Logger
+	}
+	
+	public void shutdown()
+	{
+		stopped = true;
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+			// TODO Logger
+		}
+	}
+	
+	//use multiple threads to listen to the port
+	//protected: left extension for new IO realization
+	protected class Acceptor implements Runnable
+	{
+		Socket socket;
+		@Override
+		public void run() 
+		{
+			while(!stopped)
 			{
-				socket = serverSocket.accept();
+				try
+				{
+					socket = serverSocket.accept();
+				}
+				catch(IOException e)
+				{
+					continue;
+				}
 			}
-			catch(IOException e)
-			{
-				continue;
-			}
-			//Hand this socket off to HttpProcessor
-			HttpProcessor processor = new HttpProcessor(this);
+			HttpProcessor processor = new HttpProcessor();
 			try
 			{
 				processor.process(socket);
+				socket.close();
 			}
 			catch(Exception e)
 			{
 				try {
 					socket.close();
 				} catch (IOException e1) {
-					
+					//Ignore..
 				}
 			}
-		}//while
-	}
-	
-	public void start()
-	{
-		Thread thread = new Thread(this);			//set this object as the new thread's target
-		thread.start();													   //start new thread
+		}
 	}
 }
 		

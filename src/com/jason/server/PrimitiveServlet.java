@@ -5,7 +5,7 @@ import java.io.*;
 
 /**
   * this is a test servlet for the simpleContainer module
-  * @author Jason
+  * @author lwz
   */
 public class PrimitiveServlet implements Servlet
 {

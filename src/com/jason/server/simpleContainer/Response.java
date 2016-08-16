@@ -2,7 +2,10 @@ package com.jason.server.simpleContainer;
 
 import java.io.*;
 import java.util.*;
+
 import javax.servlet.*;
+
+import com.jason.server.container.HttpServer;
 
 /**
   * this class encapsulates the socket's OutputStream 
@@ -32,7 +35,7 @@ public class Response implements ServletResponse
 		FileInputStream fis = null;
 		try
 		{
-			File file = new File(HttpServer1.WEB_ROOT,request.getUri());
+			File file = new File(HttpServer.WEB_ROOT,request.getUri());
 			if(file.exists())
 			{
 				//if exists then send the byte buffer to the socket

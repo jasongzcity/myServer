@@ -1,6 +1,6 @@
 package com.jason.server;
 
-import java .net.Socket;
+import java.net.Socket;
 import java.io.*;
 
 public class ServerTest
@@ -35,7 +35,7 @@ public class ServerTest
 				}
 				loop = false;
 			}
-			Thread.currentThread().sleep(50);//Ñ­»·ÔÝÍ£
+			Thread.sleep(50);//Ñ­»·ÔÝÍ£
 		}
 		System.out.println(sb.toString());
 		mySocket.close();

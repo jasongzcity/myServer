@@ -31,6 +31,9 @@ import com.jason.server.util.http.DateFormatter;
  */
 public final class MyServletResponse implements HttpServletResponse 
 {
+	//static standard charset
+	public static final Charset CS_USCII = StandardCharsets.US_ASCII; 
+	
 	private String characterEncoding;
 	private boolean isCharsetSet;//charset explicitly setted
 	private boolean isCommited;
@@ -48,12 +51,12 @@ public final class MyServletResponse implements HttpServletResponse
 														 // also,wrap in ServletOutputStream or PrintWriter for 
 													    // abstract read/write operation on http body
 	private List<Cookie> cookies = new ArrayList<>();
-	private Map<String,Object> headers  = new HashMap<String,Object>();
+	private Map<String,Object> headers  = new HashMap<>();
 	private String protocol = "HTTP/1.1"; //default protocol
 	private boolean isError;
 	private boolean isRedirect;
 	private String redirectURL;//should be absolute URL 
-	public static final Charset CS_USCII = StandardCharsets.US_ASCII; 
+	private MyServletRequest request;//lower level request
 	
 	public MyServletResponse(OutputStream out)
 	{
@@ -338,9 +341,9 @@ public final class MyServletResponse implements HttpServletResponse
 	/**
 	 * @see javax.servlet.http.HttpServletResponse#encodeRedirectUrl(java.lang.String)
 	 */
+	@Deprecated
 	@Override
 	public String encodeRedirectUrl(String arg0) {
-		// deprecated
 		return encodeRedirectURL(arg0);
 	}
 
@@ -356,9 +359,9 @@ public final class MyServletResponse implements HttpServletResponse
 	/**
 	 * @see javax.servlet.http.HttpServletResponse#encodeUrl(java.lang.String)
 	 */
+	@Deprecated
 	@Override
 	public String encodeUrl(String arg0) {
-		//deprecated
 		return encodeURL(arg0);
 	}
 
@@ -519,6 +522,16 @@ public final class MyServletResponse implements HttpServletResponse
 
 	public void setRedirect(boolean isRedirect) {
 		this.isRedirect = isRedirect;
+	}
+	
+	public void setRequest(MyServletRequest request)
+	{
+		this.request = request;
+	}
+	
+	public MyServletRequest getRequest()
+	{
+		return this.request;
 	}
 	
 	//-----------send methods------------//
