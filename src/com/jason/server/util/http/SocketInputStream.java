@@ -7,6 +7,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.jason.server.util.ByteHelper;
 import com.jason.server.util.exception.InvalidRequestException;
 
@@ -18,6 +21,8 @@ import com.jason.server.util.exception.InvalidRequestException;
  */
 public class SocketInputStream extends InputStream
 {
+	private static final Logger log = LogManager.getLogger(SocketInputStream.class);
+
 	protected byte[] byteBuffer;
 	private int length;
 	private int requestLineEnd = -1;

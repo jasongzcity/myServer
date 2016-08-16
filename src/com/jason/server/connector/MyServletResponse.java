@@ -19,6 +19,9 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.jason.server.util.ByteHelper;
 import com.jason.server.util.HTMLHelper;
 import com.jason.server.util.exception.InvalidResponseException;
@@ -31,6 +34,8 @@ import com.jason.server.util.http.DateFormatter;
  */
 public final class MyServletResponse implements HttpServletResponse 
 {
+	private static final Logger log  = LogManager.getLogger(MyServletResponse.class);
+
 	//static standard charset
 	public static final Charset CS_USCII = StandardCharsets.US_ASCII; 
 	

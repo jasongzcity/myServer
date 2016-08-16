@@ -1,7 +1,12 @@
 package com.jason.server.connector;
 
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.InetAddress;
 import java.io.IOException;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
   * HttpConnector in charge of connecting the client.
@@ -12,6 +17,8 @@ import java.io.IOException;
   */
 public class HttpConnector
 {
+	private static Logger log = LogManager.getLogger(HttpConnector.class);
+	
 	//TODO: reuse HttpProcessors
 	private boolean stopped;	//flag
 	private String schema = "Http"; 	//handle http request
@@ -22,6 +29,11 @@ public class HttpConnector
 	//Default two acceptors
 	private int acceptorCount = 2;
 	private Acceptor[] acceptors;
+	
+	//thread number that queue at port
+	private int backLog = 3;
+	public int getBackLog() { return backLog; }
+	public void setBackLog(int backLog) { this.backLog = backLog; }
 	
 	public HttpConnector(int port)
 	{
@@ -51,7 +63,7 @@ public class HttpConnector
 		}
 		catch(Exception e)
 		{
-			//TODO: logger 
+			log.error("can't bind server socket to given address");
 			System.exit(-1);
 		}
 	}
@@ -71,7 +83,7 @@ public class HttpConnector
 			Thread t = new Thread(acceptors[i],threadName);
 			t.start();
 		}
-		//TODO:Logger
+		log.info("setting up acceptors");
 	}
 	
 	public void shutdown()
@@ -80,7 +92,7 @@ public class HttpConnector
 		try {
 			serverSocket.close();
 		} catch (IOException e) {
-			// TODO Logger
+			log.warn("error while shutting server socket");
 		}
 	}
 	
@@ -100,22 +112,16 @@ public class HttpConnector
 				}
 				catch(IOException e)
 				{
+					log.warn("error while accepting socket");
 					continue;
 				}
 			}
 			HttpProcessor processor = new HttpProcessor();
-			try
-			{
-				processor.process(socket);
+			processor.process(socket);
+			try {
 				socket.close();
-			}
-			catch(Exception e)
-			{
-				try {
-					socket.close();
-				} catch (IOException e1) {
-					//Ignore..
-				}
+			} catch (IOException e) {
+				log.warn("error while closing socket");
 			}
 		}
 	}

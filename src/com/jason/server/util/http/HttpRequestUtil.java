@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.jason.server.connector.MyServletRequest;
 import com.jason.server.util.ByteHelper;
 import com.jason.server.util.exception.InvalidRequestException;
@@ -16,6 +19,8 @@ import com.jason.server.util.exception.InvalidRequestException;
 public class HttpRequestUtil
 {
 	////////////static fields//////////////
+	private static final Logger log = LogManager.getLogger(HttpRequestUtil.class);
+	
 	public final static String CONTENT_TYPE = "Content-Type";
 	
 	public final static String CONTENT_LENGTH = "Content-Length";

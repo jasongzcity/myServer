@@ -7,6 +7,9 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.jason.server.connector.HttpConnector;
 
 /**
@@ -19,6 +22,7 @@ import com.jason.server.connector.HttpConnector;
   */ 
 public class HttpServer
 {
+	private static final Logger log = LogManager.getLogger(HttpServer.class);
 	public static final String WEB_ROOT = System.getProperty("server.base")+File.separator+"webroot";
 	public static final String SHUTDOWN = "SHUTDOWN";//shutdown command
 	//port listening for shutdown command
@@ -54,11 +58,11 @@ public class HttpServer
 		try
 		{
 			//shutdown port bind on local host
-			serverSocket = new ServerSocket(shudownPort,1,InetAddress.getLocalHost());
+			serverSocket = new ServerSocket(shudownPort,1,InetAddress.getByName("127.0.0.1"));
 		}
 		catch(Exception e)
 		{
-			//TODO: logger
+			log.error("error binding awaiting server socket");
 			shutdown();
 		}
 		while(!stopped)
@@ -72,7 +76,7 @@ public class HttpServer
 			}
 			catch(IOException e)
 			{
-				//TODO: logging warning
+				log.warn("error while accepting socket");
 				continue;
 			}
 			int count = 0;//counting byte
@@ -91,14 +95,14 @@ public class HttpServer
 				}
 				command += (char)b;
 				count++;
-			}while(count<SHUTDOWN.length()-1);
+			}while(count<SHUTDOWN.length());
 			if(command.equals(SHUTDOWN))
 			{
 				stopped = true;//stop listening & ahead to shutdown method
 				try {
 					serverSocket.close();
 				} catch (IOException e) {
-					// TODO logger
+					log.warn("error while closing socket");
 				}
 			}
 		}//while

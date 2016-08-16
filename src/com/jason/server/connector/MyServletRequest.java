@@ -34,6 +34,9 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpUpgradeHandler;
 import javax.servlet.http.Part;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.jason.server.util.ByteHelper;
 import com.jason.server.util.ParameterMap;
 import com.jason.server.util.http.SocketInputStream;
@@ -46,23 +49,25 @@ import com.jason.server.util.http.SocketInputStream;
  */
 public final class MyServletRequest implements HttpServletRequest 
 {
-	protected Map<String,Object> headers = new HashMap<String,Object>();
-	protected Map<String,List<String>> parameterMap = new HashMap<>();
-	protected String method;
-	protected String protocol;
-	protected String requestUri;
-	protected String queryString;
-	protected String requestSessionId;
-	protected ArrayList<Cookie> cookies = new ArrayList<>();//transform to array when user call getter
-	protected SocketInputStream input;//underlying socket's inputStream
-	protected boolean requestedSessionIdFromURL;
-	protected Map<String,Object> attributes = new HashMap<String,Object>();
-	protected String contentType;
-	protected Long contentLength = -1L;
-	protected String characterEncoding;//null if not parse,parse from content-type
-	protected int serverPort = 0;
-	protected String serverName;
-	protected boolean isParameterParsed;
+	private static final Logger log  = LogManager.getLogger(MyServletRequest.class);
+	
+	private Map<String,Object> headers = new HashMap<String,Object>();
+	private Map<String,List<String>> parameterMap = new HashMap<>();
+	private String method;
+	private String protocol;
+	private String requestUri;
+	private String queryString;
+	private String requestSessionId;
+	private ArrayList<Cookie> cookies = new ArrayList<>();//transform to array when user call getter
+	private SocketInputStream input;//underlying socket's inputStream
+	private boolean requestedSessionIdFromURL;
+	private Map<String,Object> attributes = new HashMap<String,Object>();
+	private String contentType;
+	private Long contentLength = -1L;
+	private String characterEncoding;//null if not parse,parse from content-type
+	private int serverPort = 0;
+	private String serverName;
+	private boolean isParameterParsed;
 	
 	@Override
 	public AsyncContext getAsyncContext() {
