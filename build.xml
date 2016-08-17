@@ -37,7 +37,7 @@
     <target name="run" depends="clean,compile" >
         <java classname="com.jason.server.simpleContainer.HttpServer1"  fork="true">
             <classpath>
-                <pathelement path="build/classes" />
+                <!-- <pathelement path="build/classes" /> -->
                 <path refid="classpath" />
             </classpath>
          </java>

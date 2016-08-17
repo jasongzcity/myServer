@@ -92,8 +92,9 @@ public class HttpConnector
 		try {
 			serverSocket.close();
 		} catch (IOException e) {
-			log.warn("error while shutting server socket");
+			log.warn("error while closing socket");
 		}
+		log.info("connector has been destroyed");
 	}
 	
 	//use multiple threads to listen to the port
@@ -106,23 +107,22 @@ public class HttpConnector
 		{
 			while(!stopped)
 			{
-				try
-				{
+				try{
 					socket = serverSocket.accept();
-				}
-				catch(IOException e)
-				{
+					socket.setSoTimeout(10*1000);
+				}catch(IOException e){
 					log.warn("error while accepting socket");
 					continue;
 				}
+				HttpProcessor processor = new HttpProcessor();
+				processor.process(socket);
+				try {
+					socket.close();
+				} catch (IOException e) {
+					log.warn("error while closing socket");
+				}
 			}
-			HttpProcessor processor = new HttpProcessor();
-			processor.process(socket);
-			try {
-				socket.close();
-			} catch (IOException e) {
-				log.warn("error while closing socket");
-			}
+			log.info("exiting acceptor");
 		}
 	}
 }

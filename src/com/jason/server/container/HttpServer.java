@@ -28,6 +28,7 @@ public class HttpServer
 	//port listening for shutdown command
 	private final int shudownPort = 8005;
 	private boolean stopped;
+	private ServerSocket serverSocket;
 	
 	
 	//port listening for connection,default 8080
@@ -54,7 +55,6 @@ public class HttpServer
 	//main thread stay listening for shutdown command
 	public void await()
 	{
-		ServerSocket serverSocket = null;
 		try
 		{
 			//shutdown port bind on local host
@@ -72,6 +72,7 @@ public class HttpServer
 			try
 			{
 				socket = serverSocket.accept();
+				socket.setSoTimeout(10*1000);
 				in = socket.getInputStream();
 			}
 			catch(IOException e)
@@ -100,9 +101,9 @@ public class HttpServer
 			{
 				stopped = true;//stop listening & ahead to shutdown method
 				try {
-					serverSocket.close();
+					socket.close();
 				} catch (IOException e) {
-					log.warn("error while closing socket");
+
 				}
 			}
 		}//while
@@ -111,7 +112,13 @@ public class HttpServer
 	//shutdown this server instance
 	public void shutdown()
 	{
+		try {
+			serverSocket.close();
+		} catch (IOException e) {
+			log.warn("error while closing socket");
+		}
 		connector.shutdown();
+		log.info("server has been destroyed");
 	}
 	
 }
