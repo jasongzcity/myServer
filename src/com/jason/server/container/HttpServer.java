@@ -16,7 +16,7 @@ import com.jason.server.connector.HttpConnector;
   * This is the core of the whole container.
   * In tomcat, a server instance hold all the components 
   * and responsible of 
-  * starting up and shutting downing.
+  * starting up and shutting downing components.
   * @author lwz
   * @since 2016-8-16 
   */ 
@@ -29,7 +29,6 @@ public class HttpServer
 	private final int shudownPort = 8005;
 	private boolean stopped;
 	private ServerSocket serverSocket;
-	
 	
 	//port listening for connection,default 8080
 	private int port = 8080;

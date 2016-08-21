@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import com.jason.server.util.ByteHelper;
 import com.jason.server.util.HTMLHelper;
 import com.jason.server.util.exception.InvalidResponseException;
+import com.jason.server.util.http.CookieProcessor;
 import com.jason.server.util.http.DateFormatter;
 
 /**
@@ -558,7 +559,8 @@ public final class MyServletResponse implements HttpServletResponse
 	}
 	
 	/*
-	 * this method is responsible for parsing Strings and write bytes to OutputBuffer.
+	 * this method is responsible for parsing Strings 
+	 * and write bytes to OutputBuffer.
 	 * send headers & cookies
 	 */
 	@SuppressWarnings("unchecked")
@@ -594,9 +596,26 @@ public final class MyServletResponse implements HttpServletResponse
 			}
 			ob.realWriteCRLF();
 		}
+		sendCookies();
 		ob.realWriteCRLF();//line that separates headers and body 
 	}
 	
+	//Sending Netscape cookie instead of RFC2965 cookie
+	private void sendCookies() {
+		int num = cookies.size();
+		if(num==0)
+		{
+			return;
+		}
+		for(int i=0;i<num;i++)
+		{
+			ob.realWriteBytes("Set-Cookie: ".getBytes(CS_USCII));
+			ob.realWriteBytes(
+					CookieProcessor.generateHeader(cookies.get(i)).getBytes(CS_USCII));
+			ob.realWriteCRLF();
+		}
+	}
+
 	/**
 	 * entrance to end this reponse. 
 	 */
@@ -729,26 +748,26 @@ public final class MyServletResponse implements HttpServletResponse
 	{
 		//Direct write buffer??
 		ByteBuffer buffer = ob.byteBuffer;
-		buffer.put(HTMLHelper.ELE_HTML_BYTE);
-		buffer.put(ByteHelper.CRLF[0]);//'\r'
-		buffer.put(HTMLHelper.ELE_HEAD_BYTE);
-		buffer.put(HTMLHelper.ELE_TITLE_BYTE);
-		buffer.put(String.valueOf(status).getBytes(CS_USCII));
-		buffer.put(HTMLHelper.ELE_TITLE_END_BYTE);
-		buffer.put(HTMLHelper.ELE_HEAD_END_BYTE);
-		buffer.put(ByteHelper.CRLF[0]);
-		buffer.put(HTMLHelper.ELE_BODY_BYTE);
-		buffer.put(ByteHelper.CRLF[0]);
-		buffer.put("<h1>".getBytes(CS_USCII));
-		buffer.put(String.valueOf(status).getBytes(CS_USCII));
-		buffer.put("</h1>".getBytes(CS_USCII));
-		buffer.put(HTMLHelper.HR_BYTE);
-		buffer.put(ByteHelper.CRLF[0]);
-		buffer.put(HTMLHelper.ELE_CENTER_BYTE);
-		buffer.put("MyServer V0.1".getBytes(CS_USCII));
-		buffer.put(HTMLHelper.ELE_CENTER_END_BYTE);
-		buffer.put(HTMLHelper.ELE_BODY_END_BYTE);
-		buffer.put(HTMLHelper.ELE_HTML_END_BYTE);
+		buffer.put(HTMLHelper.ELE_HTML_BYTE)
+					.put(ByteHelper.CRLF[0])//'\r'
+					.put(HTMLHelper.ELE_HEAD_BYTE)
+					.put(HTMLHelper.ELE_TITLE_BYTE)
+					.put(String.valueOf(status).getBytes(CS_USCII))
+					.put(HTMLHelper.ELE_TITLE_END_BYTE)
+					.put(HTMLHelper.ELE_HEAD_END_BYTE)
+					.put(ByteHelper.CRLF[0])
+					.put(HTMLHelper.ELE_BODY_BYTE)
+					.put(ByteHelper.CRLF[0])
+					.put("<h1>".getBytes(CS_USCII))
+					.put(String.valueOf(status).getBytes(CS_USCII))
+					.put("</h1>".getBytes(CS_USCII))
+					.put(HTMLHelper.HR_BYTE)
+					.put(ByteHelper.CRLF[0])
+					.put(HTMLHelper.ELE_CENTER_BYTE)
+					.put("MyServer V0.1".getBytes(CS_USCII))
+					.put(HTMLHelper.ELE_CENTER_END_BYTE)
+					.put(HTMLHelper.ELE_BODY_END_BYTE)
+					.put(HTMLHelper.ELE_HTML_END_BYTE);
 		setHeader("Content-Length",String.valueOf(ob.bytesWrittern()));
 	}
 	

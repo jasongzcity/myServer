@@ -145,7 +145,6 @@ public class OutputBuffer extends Writer
 			out.write(src, off, len);
 		} catch (IOException e) {
 			//Ignore.. client may get a "broken" response
-			e.printStackTrace();
 		}
 	}
 	
@@ -155,7 +154,6 @@ public class OutputBuffer extends Writer
 			out.write(src);
 		} catch (IOException e) {
 			//Ignore
-			e.printStackTrace();
 		}
 	}
 	

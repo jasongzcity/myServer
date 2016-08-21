@@ -23,7 +23,7 @@ import com.jason.server.util.http.SocketInputStream;
   */
 public class HttpProcessor
 {	
-	////////////instance's fields/////////
+	//////////// fields/////////
 	
 	private HttpServletRequest httpServletRequest;
 	private HttpServletResponse httpServletResponse;
