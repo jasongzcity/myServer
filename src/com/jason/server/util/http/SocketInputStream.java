@@ -10,6 +10,7 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.jason.server.connector.MyServletRequest;
 import com.jason.server.util.ByteHelper;
 import com.jason.server.util.exception.InvalidRequestException;
 
@@ -53,8 +54,9 @@ public class SocketInputStream extends InputStream
 	}
 	
 	//init method may need to rewrite: 
-	//it works like: bulk reading the whole http message and later parse it. 
-	//it does not have a mechanism of validate bad request
+	//It works like: bulk reading the whole http message and later parse it. 
+	//It may cause severe performance damage while the input stream is
+	//not arrived yet since it will block the thread.
 	private void init()
 	{
 		int i = 0;
@@ -65,7 +67,7 @@ public class SocketInputStream extends InputStream
 			try {	
 				i = in.read(buffer,posi,length);//read from the posi and 'length' bytes every time
 			} catch (IOException e) {
-				//TODO: add logging warning
+				log.warn("IOE while reading request");
 				continue;
 			}
 			if(i<length)//to the end..
@@ -81,7 +83,8 @@ public class SocketInputStream extends InputStream
 			}
 		}
 		byteBuffer = buffer;
-		System.out.println(new String(byteBuffer));//TODO:change to logging
+		//debug
+		System.out.println(new String(byteBuffer));
 	}
 	
 	@Override
@@ -94,20 +97,19 @@ public class SocketInputStream extends InputStream
 	 * this method read from input and set the 
 	 * properties for object requestLine
 	 * @param requestLine Object that encapsulate http request line 
-	 * @throws IOException when reading InputStream
 	 * @throws InvalidRequestException when the request line is not in right syntax
 	 */
-	public void readRequestLine(HttpRequestLine requestLine) throws InvalidRequestException, IOException
+	public void readRequestLine(MyServletRequest request) throws InvalidRequestException
 	{
 		if(requestLineEnd==-1)
 		{
 			findRequestLineEnd();
 		}
 		int methodEnd = ByteHelper.indexOf(byteBuffer, ByteHelper.SPACE, 0);
-		requestLine.method = new String(byteBuffer,0,methodEnd,defaultCharset);
+		request.setMethod(new String(byteBuffer,0,methodEnd,defaultCharset));
 		int uriEnd = ByteHelper.indexOf(byteBuffer, ByteHelper.SPACE, methodEnd+1);//find uri String
-		requestLine.uri = new String(byteBuffer,methodEnd,uriEnd-methodEnd,defaultCharset);
-		requestLine.protocol = new String(byteBuffer,uriEnd+1,requestLineEnd-uriEnd-1,defaultCharset);
+		request.setRequestURI(new String(byteBuffer,methodEnd,uriEnd-methodEnd,defaultCharset));
+		request.setProtocol(new String(byteBuffer,uriEnd+1,requestLineEnd-uriEnd-1,defaultCharset));
 	}
 	
 	/**

@@ -8,6 +8,8 @@ import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.jason.server.util.exception.ExceptionUtils;
+
 /**
   * HttpConnector in charge of connecting the client.
   * Create threads to accept client requests and  hand them to 
@@ -59,7 +61,7 @@ public class HttpConnector
 	{
 		try
 		{
-			serverSocket = new ServerSocket(port,1,InetAddress.getByName("127.0.0.1"));
+			serverSocket = new ServerSocket(port,100,InetAddress.getByName("127.0.0.1"));
 		}
 		catch(Exception e)
 		{
@@ -114,15 +116,18 @@ public class HttpConnector
 					log.warn("error while accepting socket");
 					continue;
 				}
+				
+				//TODO: use a synchronized data structure to 
+				//provide acceptor-threads recycled processor
 				HttpProcessor processor = new HttpProcessor();
-				processor.process(socket);
 				try {
+					processor.process(socket);
 					socket.close();
-				} catch (IOException e) {
-					log.warn("error while closing socket");
+				} catch (Throwable t) {
+					ExceptionUtils.swallowThrowable(t);//normal exception should not damage the thread
 				}
 			}
-			log.info("exiting acceptor");
+			log.info("exiting acceptor: "+Thread.currentThread().getName());
 		}
 	}
 }

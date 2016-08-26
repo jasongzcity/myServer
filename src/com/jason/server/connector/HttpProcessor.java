@@ -2,34 +2,34 @@ package com.jason.server.connector;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.*;
+import java.net.Socket;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import com.jason.server.container.ServletProcessor;
-import com.jason.server.container.StaticResourceProcessor;
-import com.jason.server.util.http.HttpRequestUtil;
+import com.jason.server.util.exception.ExceptionUtils;
 import com.jason.server.util.http.SocketInputStream;
 
 /**
-  * This processor is like the class HttpServer1 in some way.They 
-  * parse the request Uri and then decide handle it to servlet processor 
-  * or static processor.Also,it parses the request's first line and header.
+  * This processor is responsible for process socket and handle 
+  * streams and lower level request & response to adapter.
+  * @see tomcat's socketProcessor
+  * @see tomcat's httpProcessor
   * @author lwz
   * @since JDK1.8
   */
 public class HttpProcessor
 {	
-	//////////// fields/////////
+	private static final Logger log = LogManager.getLogger(HttpProcessor.class);
 	
-	private HttpServletRequest httpServletRequest;
-	private HttpServletResponse httpServletResponse;
+	//////// fields/////////
 	private HttpConnector connector;
-	protected MyServletRequest request = new MyServletRequest();
+	protected MyServletRequest request;
 	protected MyServletResponse response;
+	protected MyAdapter adapter;
+	public void setAdapter(MyAdapter adapter){ this.adapter = adapter; }
+	public MyAdapter getAdapter(){ return adapter; }
+	
 	/**
 	 * Constructor.
 	 * Wrap the connector
@@ -38,59 +38,63 @@ public class HttpProcessor
 	public HttpProcessor(HttpConnector conn)
 	{
 		this.connector = conn;
+		adapter = new MyAdapter(this);
 	}
 	
 	public HttpProcessor(){}
 	
 	/**
-	 * process the socket,can only handle http protocol right now 
+	 * process the socket 
 	 * @param socket
 	 */
 	public void process(Socket socket)
 	{
+		//TODO: use socket wrapper,to screen lower level detail
 		SocketInputStream input  = null;
 		OutputStream output = null;
 		try
 		{
 			input = new SocketInputStream(socket.getInputStream(),2048);
 			output = socket.getOutputStream();
-			
-			//later could use a socket wrapper,to screen lower level detail
-			request.setInputStream(input);	//parse until the fields got called
+			request = new  MyServletRequest();
 			response = new MyServletResponse(output);
-			
+
+			request.setInputStream(input);
 			response.setRequest(request);
 			
-			HttpRequestUtil.parseRequestLine(request);
-			HttpRequestUtil.parseHeaders(request);
-			
-			//wrapper object
-			httpServletRequest =new HttpServletRequestWrapper(request);
-			httpServletResponse = new HttpServletResponseWrapper(response);
-			
-			//easy resource mapping ;-)
-			//only provide service for servlet & html
-			if(httpServletRequest.getRequestURI().startsWith("/servlet/"))	//calling servlet
-			{
-				//TODO: make processors recycled to avoid GC
-				ServletProcessor servletProcessor = new ServletProcessor();
-				//servletProcessor.process(request,response);
-			}
-			else
-			{
-				StaticResourceProcessor staticProcessor = new StaticResourceProcessor();
-				//staticProcessor.process(request,response);
-			}
-			
+			adapter.service(request, response);
 		}
-		catch(Exception e)
+		catch(IOException e)
 		{
+			log.error("IO Error while setting up request",e);
 			try {
 				socket.close();
 			} catch (IOException e1) {
-				e1.printStackTrace();
+				ExceptionUtils.swallowException(e1);
 			}
 		}
+	}
+	
+	//------simple hook mechanism------//
+	
+	/**
+	 * hook method for child processors to call
+	 * Note: status code should be set in response object
+	 * @param actionCode action command
+	 */
+	public void action(ActionCode actionCode)
+	{
+		switch(actionCode)
+		{
+			case COMMIT:{
+				response.commit();
+			}
+		}
+	}
+	
+	public static enum ActionCode
+	{
+		COMMIT;
 	}
 }
 			

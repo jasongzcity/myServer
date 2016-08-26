@@ -68,7 +68,13 @@ public final class ClassLoaderFactory
 			}			
 		}
 		
-		URL[] urls = (URL[]) URLSet.toArray();
+		URL[] urls = new URL[URLSet.size()];//(URL[]) URLSet.toArray();
+		int i=0;
+		for(URL url:URLSet)
+		{
+			urls[i] = url;
+			i++;
+		}
 		if(parent!=null)
 		{
 			return new URLClassLoader(urls,parent);

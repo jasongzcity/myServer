@@ -1,6 +1,5 @@
 package com.jason.server.util.http;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -41,18 +40,9 @@ public class HttpRequestUtil
 	 */
 	public static void parseRequestLine(MyServletRequest request) throws InvalidRequestException
 	{
-		HttpRequestLine requestLine = new HttpRequestLine();
 		SocketInputStream input = request.getSocketStream();
-		try {
-			//to deal with the InputStream's IOException
-			input.readRequestLine(requestLine);
-		} catch (IOException e) {
-			try {
-				input.close();
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-		}
+		input.readRequestLine(request);
+		
 		/*
 		 * tomcat put these fields in ByteBuffer(ByteChunk)
 		 * and create a lot of String-like methods to deal with it.
@@ -60,9 +50,16 @@ public class HttpRequestUtil
 		 * improve the server's performance.
 		 * Here I use String instead.
 		 */
-		String method = requestLine.method;
-		String uri = requestLine.uri;
-		String protocol = requestLine.protocol;
+		String uri = request.getRequestURI();//It's raw,parse it
+		
+		if(uri.contains("http"))//full URL
+		{
+			uri = uri.substring(uri.lastIndexOf('/'));
+		}
+		else 										// string like: www.sample.com/URI.... or /URI.....
+		{
+			uri = uri.substring(uri.indexOf('/'));
+		}
 		
 		//parse query parameters
 		int question = uri.indexOf('?');
@@ -76,7 +73,7 @@ public class HttpRequestUtil
 			request.setQueryString(null);
 		}
 		
-		//parse jsessionid in the url, end with ;
+		//parse jsessionid in the URL, end with ;
 		String match = ";jsession=";
 		int semicolon = uri.indexOf(match);
 		if(semicolon>=0)
@@ -93,13 +90,11 @@ public class HttpRequestUtil
 				uri = uri.substring(0, semicolon);
 			}
 		}
-		else//no session id
+		else//no URL-encoded session id
 		{
 			request.setRequestSessionId(null);
 			request.setRequestedSessionIdFromURL(false);
 		}
-		request.setMethod(method);
-		request.setProtocol(protocol);
 		request.setRequestURI(uri);
 	}
 	
@@ -153,6 +148,10 @@ public class HttpRequestUtil
 					request.setHeader(name, v);
 				}
 			}
+		}
+		if(request.getHeader("Host")==null)
+		{
+			throw new InvalidRequestException("request doesn't contain Host header");
 		}
 	}
 	

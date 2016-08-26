@@ -51,11 +51,13 @@ public final class MyServletResponse implements HttpServletResponse
 	private Locale locale;
 	private Long contentLength = -1L;
 	private int status = -1; //status code
-	//private String message;//According to RFC 7230 client should ignore reason phrase
+	//According to RFC 7230 client should ignore reason phrase
 	
-	private OutputBuffer ob;// this gives direct control of buffer
-														 // also,wrap in ServletOutputStream or PrintWriter for 
-													    // abstract read/write operation on http body
+	private OutputBuffer ob;// gives direct control of buffer
+	// also,wrap in ServletOutputStream or PrintWriter for 
+	// abstract read/write operation on http body
+	public OutputBuffer getOutputBuffer(){ return ob; }
+	
 	private List<Cookie> cookies = new ArrayList<>();
 	private Map<String,Object> headers  = new HashMap<>();
 	private String protocol = "HTTP/1.1"; //default protocol
@@ -74,7 +76,7 @@ public final class MyServletResponse implements HttpServletResponse
 	 */
 	@Override
 	public void flushBuffer() throws IOException {
-		ob.flush();
+		commit();
 	}
 
 	/**
@@ -443,7 +445,7 @@ public final class MyServletResponse implements HttpServletResponse
 		resetBuffer();//clearing buffer but keep headers and cookies
 		setError(true);//using error page.
 		setStatus(arg0);
-		ob.flush();
+		commit();
 	}
 
 	/**
@@ -453,7 +455,7 @@ public final class MyServletResponse implements HttpServletResponse
 	public void sendRedirect(String location) throws IOException {
 		this.redirectURL = location;
 		setRedirect(true);
-		ob.flush();
+		commit();
 	}
 
 	/**
@@ -542,6 +544,25 @@ public final class MyServletResponse implements HttpServletResponse
 	
 	//-----------send methods------------//
 	
+	/**
+	 * entrance to end this reponse. 
+	 */
+	public void commit()
+	{
+		try {
+			writeSpecialBody();//Currently error
+			sendFirstLine();
+			sendHeaders();
+			ob.flushBody();
+		} catch (InvalidResponseException e) {
+			log.error("Servlet Error",e);
+		} catch (IOException IOE){
+			log.error("IO Error while sending response",IOE);
+		}
+		ob.close();
+		setCommited(true);
+	}
+	
 	private void sendFirstLine() throws InvalidResponseException
 	{
 		ob.realWriteBytes(protocol.getBytes(CS_USCII));
@@ -600,72 +621,6 @@ public final class MyServletResponse implements HttpServletResponse
 		ob.realWriteCRLF();//line that separates headers and body 
 	}
 	
-	//Sending Netscape cookie instead of RFC2965 cookie
-	private void sendCookies() {
-		int num = cookies.size();
-		if(num==0)
-		{
-			return;
-		}
-		for(int i=0;i<num;i++)
-		{
-			ob.realWriteBytes("Set-Cookie: ".getBytes(CS_USCII));
-			ob.realWriteBytes(
-					CookieProcessor.generateHeader(cookies.get(i)).getBytes(CS_USCII));
-			ob.realWriteCRLF();
-		}
-	}
-
-	/**
-	 * entrance to end this reponse. 
-	 */
-	public void commit()
-	{
-		try {
-			writeSpecialBody();//Currently error
-			sendFirstLine();
-			sendHeaders();
-		} catch (InvalidResponseException e) {
-			try {
-				ob.close();
-			} catch (IOException e1) {
-				//Ignore IOException
-				//even if sending error messages
-			}
-		}
-		setCommited(true);
-	}
-	
-	//----------private methods--------//
-	
-	private void parseCsFromContent()
-	{
-		if(contentType==null)
-		{
-			return;
-		}
-		String cs = "charset=";
-		int index = contentType.indexOf(cs);
-		if(index<0)
-		{
-			return;
-		}
-		characterEncoding = contentType.substring(index+cs.length());
-	}
-	
-	private void prepareCharset()
-	{
-		if(!isCharsetSet()) //using explicitly set charset
-		{
-			parseCsFromContent();
-			if(characterEncoding==null)
-			{
-				characterEncoding = StandardCharsets.UTF_8.name();//using utf-8 as default
-			}
-		}
-		isCharsetSet = true;
-	}
-	
 	//check if any important header missing
 	//for now: Content-Type,Content-Length,
 	//Server and Date.Also,consider the headers when sending 
@@ -700,10 +655,6 @@ public final class MyServletResponse implements HttpServletResponse
 			}
 			if(contentType!=null)//if user setting charset in content type different from character encoding may leads to error
 			{
-				if(!contentType.contains("charset="))
-				{
-					contentType += "; charset="+ characterEncoding;
-				}
 				setHeader("Content-Type",contentType);
 			}
 		}
@@ -716,11 +667,61 @@ public final class MyServletResponse implements HttpServletResponse
 		{
 			setHeader("Server","MyServer V0.1");
 		}
-		if(!headers.containsKey("Connection"))//do not support keep-alive temporarily
+		if(!headers.containsKey("Connection"))//do not support keep-alive connection
 		{
 			setHeader("Connection","close");
 		}
 	}
+	
+	//Sending Netscape cookie instead of RFC2965 cookie
+	private void sendCookies() {
+		int num = cookies.size();
+		if(num==0)
+		{
+			return;
+		}
+		for(int i=0;i<num;i++)
+		{
+			ob.realWriteBytes("Set-Cookie: ".getBytes(CS_USCII));
+			ob.realWriteBytes(
+					CookieProcessor.generateHeader(cookies.get(i)).getBytes(CS_USCII));
+			ob.realWriteCRLF();
+		}
+	}
+
+	
+	
+	//----------private methods--------//
+	
+	private void parseCsFromContent()
+	{
+		if(contentType==null)
+		{
+			return;
+		}
+		String cs = "charset=";
+		int index = contentType.indexOf(cs);
+		if(index<0)
+		{
+			return;
+		}
+		characterEncoding = contentType.substring(index+cs.length());
+	}
+	
+	private void prepareCharset()
+	{
+		if(!isCharsetSet()) //using explicitly set charset
+		{
+			parseCsFromContent();
+			if(characterEncoding==null)
+			{
+				characterEncoding = StandardCharsets.UTF_8.name();//using utf-8 as default
+			}
+		}
+		isCharsetSet = true;
+	}
+	
+
 	
 	//fast route writing error page to client
 	private void writeSpecialBody()

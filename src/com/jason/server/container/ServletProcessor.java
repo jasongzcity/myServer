@@ -8,17 +8,28 @@ import java.io.IOException;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * Process request for 
+ * @author Administrator
+ *
+ */
 public class ServletProcessor
 {
 	private static final Logger log = LogManager.getLogger(ServletProcessor.class);
 	
 	public void process(HttpServletRequest request,HttpServletResponse response)
 	{
+		//wrapper object
+		HttpServletRequest httpServletRequest =new HttpServletRequestWrapper(request);
+		HttpServletResponse httpServletResponse = new HttpServletResponseWrapper(response);
+		
 		String uri = request.getRequestURI();
 		String servletName = uri.substring(uri.lastIndexOf("/")+1);//get the servletname
 		URLClassLoader classLoader = null;

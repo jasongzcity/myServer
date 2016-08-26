@@ -6,7 +6,11 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.jason.server.util.ByteHelper;
+import com.jason.server.util.exception.ExceptionUtils;
 
 /**
  * Standard output for response
@@ -22,7 +26,9 @@ import com.jason.server.util.ByteHelper;
  */
 public class OutputBuffer extends Writer 
 {
+	private static final Logger log = LogManager.getLogger(OutputBuffer.class);
 	private static final int DEFAULT_CAPACITY = 8 * 1024;//buffer default capacity 8k
+	
 	protected ByteBuffer byteBuffer;
 	protected boolean isBufferWritten;
 	protected OutputStream out;
@@ -42,15 +48,17 @@ public class OutputBuffer extends Writer
 	}
 	
 	//write methods,write bytes to byteBuffer,for ServletOutputStreams and PrintWriter
-	/*
-	 *  Writer use this method 
-	 *  its expensive ... arraycopy * 2
-	 *  could we encode byte in a simpler way? direct putChar ok??
-	 *  charset.encode also cost 2 times of array copying.
-	 */
+	
+
 	@Override
 	public void write(char[] cbuf, int off, int len) throws UnsupportedEncodingException 
 	{
+		/*
+		 *  Writer use this method 
+		 *  its expensive ... arraycopy * 2
+		 *  could we encode byte in a simpler way? direct putChar ok??
+		 *  charset.encode also cost 2 times of array copying.
+		 */
 		checkBuffer();
 		byteBuffer.put(new String(cbuf,off,len).getBytes(response.getCharacterEncoding()));
 		isBufferWritten = true;
@@ -87,14 +95,17 @@ public class OutputBuffer extends Writer
 	public void flush() throws IOException 
 	{
 		response.commit();
-		flushBody();
 		out.close();
 	}
 
 	@Override
-	public void close() throws IOException 
+	public void close()
 	{
-		out.close();
+		try {
+			out.close();
+		} catch (IOException e) {
+			ExceptionUtils.swallowException(e);
+		}
 	}
 	
 	public void setBufferSize(int size)
@@ -144,7 +155,8 @@ public class OutputBuffer extends Writer
 		try {
 			out.write(src, off, len);
 		} catch (IOException e) {
-			//Ignore.. client may get a "broken" response
+			log.warn("transfering "+e.getClass().getName()+" to RuntimeException");
+			ExceptionUtils.transRuntimeException(e);
 		}
 	}
 	
@@ -153,7 +165,8 @@ public class OutputBuffer extends Writer
 		try {
 			out.write(src);
 		} catch (IOException e) {
-			//Ignore
+			log.warn("transfering "+e.getClass().getName()+" to RuntimeException");
+			ExceptionUtils.transRuntimeException(e);
 		}
 	}
 	
@@ -172,18 +185,18 @@ public class OutputBuffer extends Writer
 		realWriteByte(ByteHelper.SPACE);
 	}
 	
-	//-----------------private methods-------------------//
-	
 	//write byteBuffer to socket
-	private void flushBody() throws IOException
+	public void flushBody() throws IOException
 	{
-		if(response.isRedirect())
+		if(response.isRedirect())//no need to write byte buffer
 		{
-			//no need to write byte buffer
 			return;
 		}
 		out.write(byteBuffer.array(), 0, byteBuffer.position());//write byte array
 	}
+	
+	//-----------------private methods-------------------//
+	
 
 	private void checkBuffer()
 	{
