@@ -565,7 +565,7 @@ public final class MyServletResponse implements HttpServletResponse
 			sendHeaders();
 			ob.flushBody();
 		} catch (InvalidResponseException e) {
-			log.error("Servlet Error",e);
+			log.error("Invalid reponse",e);
 		} catch (IOException IOE){
 			log.error("IO Error while sending response",IOE);
 		}
@@ -655,6 +655,7 @@ public final class MyServletResponse implements HttpServletResponse
 					setHeader("Content-Length",String.valueOf(ob.bytesWrittern()));
 				}
 			}
+			setHeader("Content-Length",String.valueOf(contentLength));
 			if(contentType==null&&(!isRedirect || ob.isBufferWritten()))//must set contentType
 			{
 				throw new InvalidResponseException("must set content type");

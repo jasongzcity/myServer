@@ -59,8 +59,6 @@ public class HttpProcessor
 
 			request.setInputStream(input);
 			response.setRequest(request);
-			
-			adapter.service(request, response);
 		}
 		catch(IOException e)
 		{
@@ -71,6 +69,7 @@ public class HttpProcessor
 				ExceptionUtils.swallowException(e1);
 			}
 		}
+		adapter.service(request, response);
 	}
 	
 	//------simple hook mechanism------//

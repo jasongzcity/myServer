@@ -32,9 +32,11 @@ public final class Bootstrap
 		}
 	}
 	
-	private URLClassLoader servletLoader;//ClassLoader for Servlets 
+	private URLClassLoader servletLoader;//ClassLoader for servlets 
 	//Notice: URLClassLoader mainly rewrite findClass method 
-	//but still use parent-delegation
+	//but still use parent-delegation.
+	//So it can still find javax.servlet.* because 
+	//they are loaded by its parent(System-loader).
 	public URLClassLoader getServletLoader(){ return servletLoader; }
 	
 	public void init(String port)
@@ -62,7 +64,7 @@ public final class Bootstrap
 	public void initClassLoader()
 	{
 		log.info("initializing class loaders");
-		File[] files = {new File(HttpServer.WEB_ROOT)};//put servlets in webroot
+		File[] files = { new File(HttpServer.SERVLET_DIR) };//put servlets in servlet_dir
 		servletLoader = ClassLoaderFactory.createClassLoader(files,null,null);
 	}
 }

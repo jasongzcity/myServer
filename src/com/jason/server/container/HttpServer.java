@@ -26,9 +26,9 @@ public class HttpServer
 	private static final Logger log = LogManager.getLogger(HttpServer.class);
 	public static final String WEB_ROOT = System.getProperty("server.base")+File.separator+"webroot";
 	public static final String STATIC_DIR = WEB_ROOT+File.separator+"static";
-	public static final String SERVLE_DIR = WEB_ROOT+File.separator+"servlet";
-
+	public static final String SERVLET_DIR = WEB_ROOT+File.separator+"servlet";
 	public static final String SHUTDOWN = "SHUTDOWN";//shutdown command
+	
 	//port listening for shutdown command
 	private final int shudownPort = 8005;
 	private boolean stopped;
@@ -102,12 +102,12 @@ public class HttpServer
 			}while(count<SHUTDOWN.length());
 			if(command.equals(SHUTDOWN))
 			{
-				stopped = true;//stop listening & ahead to shutdown method
-				try {
-					socket.close();
-				} catch (IOException e) {
-					ExceptionUtils.swallowException(e);
-				}
+				stopped = true;//stop listening & head to shutdown method
+			}
+			try {
+				socket.close();
+			} catch (IOException e) {
+				ExceptionUtils.swallowException(e);
 			}
 		}//while
 	}

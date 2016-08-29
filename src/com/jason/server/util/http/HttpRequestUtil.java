@@ -63,8 +63,9 @@ public class HttpRequestUtil
 		
 		//parse query parameters
 		int question = uri.indexOf('?');
-		if(question>=0) //   0: com?param...
+		if(question>=0) 
 		{
+			//TODO: parse query string into parameter
 			request.setQueryString(uri.substring(question+1));
 			uri = uri.substring(0,question);
 		}

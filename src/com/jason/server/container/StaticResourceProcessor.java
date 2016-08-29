@@ -53,7 +53,7 @@ public class StaticResourceProcessor
 		if(!target.exists())
 		{
 			response.setError(true);
-			response.setStatus(HttpServletResponse.SC_NOT_FOUND);//404
+			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			httpProcessor.action(ActionCode.COMMIT);
 			return;
 		}

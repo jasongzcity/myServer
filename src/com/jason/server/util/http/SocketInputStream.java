@@ -123,7 +123,7 @@ public class SocketInputStream extends InputStream
 		int i = 0;
 		if(requestLineEnd == -1)
 		{
-			findRequestLineEnd();
+			throw new InvalidRequestException();//the request line end should be set by now
 		}
 		List<String> list = new ArrayList<>();
 		i = requestLineEnd + 2;

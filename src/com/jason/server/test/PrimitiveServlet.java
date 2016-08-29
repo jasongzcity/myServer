@@ -1,4 +1,4 @@
-package com.jason.server;
+package com.jason.server.test;
 
 import javax.servlet.*;
 import java.io.*;

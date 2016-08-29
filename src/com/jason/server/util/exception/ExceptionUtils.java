@@ -20,8 +20,7 @@ public class ExceptionUtils
 	 */
 	public static void swallowException(Exception e)
 	{
-		if(log.isDebugEnabled())
-		{
+		if(log.isDebugEnabled()){
 			log.debug("",e);
 		}
 	}
@@ -34,13 +33,13 @@ public class ExceptionUtils
 	 */
 	public static void swallowThrowable(Throwable t)throws Error
 	{
-		if(t instanceof Error)//serious,throw it 
-		{
+		if(t instanceof Error){//serious,throw it 
 			log.error("",t);
 			throw (Error)t;
 		}
-
-		log.warn("",t);
+		if(log.isDebugEnabled()){
+			log.debug("",t);
+		}
 	}
 	
 	/**
