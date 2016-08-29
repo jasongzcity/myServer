@@ -3,7 +3,6 @@ package com.jason.server.container;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -16,11 +15,12 @@ import com.jason.server.connector.MyServletRequest;
 import com.jason.server.connector.MyServletResponse;
 import com.jason.server.connector.OutputBuffer;
 import com.jason.server.util.exception.ExceptionUtils;
+import com.jason.server.util.exception.InvalidResponseException;
 
 /**
- * 
- * @author Administrator
- *
+ * Processor for static resource
+ * @author lwz
+ * @since 2016-8-29 
  */
 public class StaticResourceProcessor
 {
@@ -49,7 +49,7 @@ public class StaticResourceProcessor
 			httpProcessor.action(ActionCode.COMMIT);
 			return;
 		}
-		File target = new File(HttpServer.WEB_ROOT,request.getRequestURI());
+		File target = new File(HttpServer.STATIC_DIR,request.getRequestURI());
 		if(!target.exists())
 		{
 			response.setError(true);
@@ -100,14 +100,21 @@ public class StaticResourceProcessor
 		}else{
 			text += fileType;
 		}
-		
-		response.setContentType(text);//NOTICE: charset should be specified by file itself
-		response.setContentLengthLong(target.length());
-		response.setStatus(HttpServletResponse.SC_OK);
-		response.setBufferSize(((Long)target.length()).intValue());
+		try {
+			response.setContentType(text);//NOTICE: charset should be specified by file itself
+			response.setContentLengthLong(target.length());
+			response.setStatus(HttpServletResponse.SC_OK);
+			response.setBufferSize(((Long)target.length()).intValue());
+			response.flushHeaderOnly();
+		} catch (InvalidResponseException e) {
+			//impossible to happen since flushHeaderOnly() only check 
+			//if status code valid.
+			//SC_OK is valid code.
+			ExceptionUtils.swallowException(e);
+		}
+			
 		FileInputStream fis = null;
-		try
-		{
+		try	{
 			fis = new FileInputStream(target);
 			OutputBuffer ob = response.getOutputBuffer();
 			byte[] buffer = new byte[BUFFER_SIZE];
@@ -115,7 +122,13 @@ public class StaticResourceProcessor
 			while((byteCount=fis.read(buffer,0,BUFFER_SIZE))!=-1)
 			{
 				ob.realWriteBytes(buffer,0,byteCount);
+				
+				if(log.isDebugEnabled()){
+					log.debug(new String(buffer));
+				}
 			}
+			ob.close();
+			response.setCommited(true);
 		} catch(IOException ioe) {
 			log.error("IOException while sending response",ioe);
 		} finally {

@@ -545,6 +545,16 @@ public final class MyServletResponse implements HttpServletResponse
 	//-----------send methods------------//
 	
 	/**
+	 * convenience method for static resource processor
+	 * @throws InvalidResponseException 
+	 */
+	public void flushHeaderOnly() throws InvalidResponseException
+	{
+		sendFirstLine();
+		sendHeaders();
+	}
+	
+	/**
 	 * entrance to end this reponse. 
 	 */
 	public void commit()
@@ -565,16 +575,16 @@ public final class MyServletResponse implements HttpServletResponse
 	
 	private void sendFirstLine() throws InvalidResponseException
 	{
-		ob.realWriteBytes(protocol.getBytes(CS_USCII));
-		ob.realWriteSpace();
 		if(status>599||status<100)
 		{
 			throw new InvalidResponseException();
 		}
+		ob.realWriteBytes(protocol.getBytes(CS_USCII));
+		ob.realWriteSpace();
 		ob.realWriteBytes(String.valueOf(status).getBytes(CS_USCII));//writing status code
 		ob.realWriteSpace();
 		
-		//ignore useless reason phrase on purpose
+		//ignore useless reason phrase here on purpose
 		
 		ob.realWriteCRLF();
 	}
@@ -610,10 +620,6 @@ public final class MyServletResponse implements HttpServletResponse
 						ob.realWriteByte(ByteHelper.SPACE);
 					}
 				}
-			}
-			else //neither String nor List
-			{
-				throw new InvalidResponseException();
 			}
 			ob.realWriteCRLF();
 		}
@@ -665,7 +671,7 @@ public final class MyServletResponse implements HttpServletResponse
 		}
 		if(!headers.containsKey("Server"))
 		{
-			setHeader("Server","MyServer V0.1");
+			setHeader("Server","MyServer/0.1");
 		}
 		if(!headers.containsKey("Connection"))//do not support keep-alive connection
 		{
@@ -760,12 +766,14 @@ public final class MyServletResponse implements HttpServletResponse
 					.put(HTMLHelper.ELE_BODY_BYTE)
 					.put(ByteHelper.CRLF[0])
 					.put("<h1>".getBytes(CS_USCII))
+					.put(HTMLHelper.ELE_CENTER_BYTE)
 					.put(String.valueOf(status).getBytes(CS_USCII))
+					.put(HTMLHelper.ELE_CENTER_END_BYTE)
 					.put("</h1>".getBytes(CS_USCII))
 					.put(HTMLHelper.HR_BYTE)
 					.put(ByteHelper.CRLF[0])
 					.put(HTMLHelper.ELE_CENTER_BYTE)
-					.put("MyServer V0.1".getBytes(CS_USCII))
+					.put("MyServer/0.1".getBytes(CS_USCII))
 					.put(HTMLHelper.ELE_CENTER_END_BYTE)
 					.put(HTMLHelper.ELE_BODY_END_BYTE)
 					.put(HTMLHelper.ELE_HTML_END_BYTE);

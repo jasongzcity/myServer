@@ -118,8 +118,8 @@ public class HttpRequestUtil
 		{
 			int i = str.indexOf(':');
 			String name = str.substring(0, i);
-			String value = str.substring(i+2);
-			if(name.equals(CONTENT_TYPE))//will need to get character encoding from content-type further
+			String value = str.substring(i+2);//skip space
+			if(name.equals(CONTENT_TYPE))//need to get character encoding from content-type
 			{
 				request.setContentType(value);
 			}
@@ -133,13 +133,17 @@ public class HttpRequestUtil
 			}
 			else if(name.equals(HOST))
 			{
-				String[] target = value.split(":");
-				if(target.length!=2)
+				if(value.contains(":"))
 				{
-					throw new InvalidRequestException();
+					String[] target = value.split(":");
+					request.setServerPort(Integer.valueOf(target[1]));
+					request.setServerName(target[0]);
 				}
-				request.setServerName(target[0]);
-				request.setServerPort(Integer.valueOf(target[1]));
+				else
+				{
+					request.setServerName(value);
+				}
+				request.setHeader("Host", value);
 			}
 			else
 			{

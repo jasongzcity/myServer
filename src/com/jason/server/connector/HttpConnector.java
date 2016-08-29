@@ -21,9 +21,8 @@ public class HttpConnector
 {
 	private static Logger log = LogManager.getLogger(HttpConnector.class);
 	
-	//TODO: reuse HttpProcessors
 	private boolean stopped;	//flag
-	private String schema = "Http"; 	//handle http request
+	private String schema = "Http"; //handle http request
 	
 	private int port;
 	private ServerSocket serverSocket;
@@ -94,7 +93,7 @@ public class HttpConnector
 		try {
 			serverSocket.close();
 		} catch (IOException e) {
-			log.warn("error while closing socket");
+			ExceptionUtils.swallowException(e);
 		}
 		log.info("connector has been destroyed");
 	}
@@ -119,12 +118,17 @@ public class HttpConnector
 				
 				//TODO: use a synchronized data structure to 
 				//provide acceptor-threads recycled processor
-				HttpProcessor processor = new HttpProcessor();
+				HttpProcessor processor = new HttpProcessor(HttpConnector.this);
 				try {
 					processor.process(socket);
-					socket.close();
 				} catch (Throwable t) {
 					ExceptionUtils.swallowThrowable(t);//normal exception should not damage the thread
+				} finally {
+					try {
+						socket.close();
+					} catch(IOException ioe) {
+						ExceptionUtils.swallowException(ioe);
+					}
 				}
 			}
 			log.info("exiting acceptor: "+Thread.currentThread().getName());

@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.jason.server.connector.HttpConnector;
+import com.jason.server.util.exception.ExceptionUtils;
 
 /**
   * This is the core of the whole container.
@@ -24,6 +25,9 @@ public class HttpServer
 {
 	private static final Logger log = LogManager.getLogger(HttpServer.class);
 	public static final String WEB_ROOT = System.getProperty("server.base")+File.separator+"webroot";
+	public static final String STATIC_DIR = WEB_ROOT+File.separator+"static";
+	public static final String SERVLE_DIR = WEB_ROOT+File.separator+"servlet";
+
 	public static final String SHUTDOWN = "SHUTDOWN";//shutdown command
 	//port listening for shutdown command
 	private final int shudownPort = 8005;
@@ -102,7 +106,7 @@ public class HttpServer
 				try {
 					socket.close();
 				} catch (IOException e) {
-
+					ExceptionUtils.swallowException(e);
 				}
 			}
 		}//while
@@ -114,7 +118,7 @@ public class HttpServer
 		try {
 			serverSocket.close();
 		} catch (IOException e) {
-			log.warn("error while closing socket");
+			ExceptionUtils.swallowException(e);
 		}
 		connector.shutdown();
 		log.info("server has been destroyed");

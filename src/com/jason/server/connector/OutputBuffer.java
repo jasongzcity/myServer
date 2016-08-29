@@ -56,7 +56,7 @@ public class OutputBuffer extends Writer
 		/*
 		 *  Writer use this method 
 		 *  its expensive ... arraycopy * 2
-		 *  could we encode byte in a simpler way? direct putChar ok??
+		 *  could we encode byte in a simpler way? direct putChar OK??
 		 *  charset.encode also cost 2 times of array copying.
 		 */
 		checkBuffer();
@@ -193,6 +193,10 @@ public class OutputBuffer extends Writer
 			return;
 		}
 		out.write(byteBuffer.array(), 0, byteBuffer.position());//write byte array
+		
+		if(log.isDebugEnabled()){
+			log.debug(new String(byteBuffer.array()));
+		}
 	}
 	
 	//-----------------private methods-------------------//

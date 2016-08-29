@@ -41,8 +41,6 @@ public class HttpProcessor
 		adapter = new MyAdapter(this);
 	}
 	
-	public HttpProcessor(){}
-	
 	/**
 	 * process the socket 
 	 * @param socket

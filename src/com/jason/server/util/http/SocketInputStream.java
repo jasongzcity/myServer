@@ -28,7 +28,6 @@ public class SocketInputStream extends InputStream
 	private int length;
 	private int requestLineEnd = -1;
 	private int headerEnd = -1;
-	private int posi = -1;
 	private boolean hasBody;
 	private InputStream in;
 	protected Charset defaultCharset = StandardCharsets.US_ASCII;
@@ -83,8 +82,10 @@ public class SocketInputStream extends InputStream
 			}
 		}
 		byteBuffer = buffer;
-		//debug
-		System.out.println(new String(byteBuffer));
+		
+		if(log.isDebugEnabled()){
+			log.debug(new String(byteBuffer));
+		}
 	}
 	
 	@Override
@@ -114,7 +115,7 @@ public class SocketInputStream extends InputStream
 	
 	/**
 	 * read headers from socket's inputStream
-	 * @return list of Strings for util methods
+	 * @return list of Strings for utility methods
 	 * @throws InvalidRequestException 
 	 */
 	public List<String> readHeaders() throws InvalidRequestException 
@@ -125,6 +126,7 @@ public class SocketInputStream extends InputStream
 			findRequestLineEnd();
 		}
 		List<String> list = new ArrayList<>();
+		i = requestLineEnd + 2;
 		while(true)
 		{
 			int head = ByteHelper.checkNextCRLF(byteBuffer, i);

@@ -1,7 +1,5 @@
 package com.jason.server.util.exception;
 
-import java.io.IOException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,7 +22,7 @@ public class ExceptionUtils
 	{
 		if(log.isDebugEnabled())
 		{
-			log.debug(e);
+			log.debug("",e);
 		}
 	}
 	
@@ -38,11 +36,11 @@ public class ExceptionUtils
 	{
 		if(t instanceof Error)//serious,throw it 
 		{
-			log.error(t);
+			log.error("",t);
 			throw (Error)t;
 		}
 
-		log.warn(t);
+		log.warn("",t);
 	}
 	
 	/**
