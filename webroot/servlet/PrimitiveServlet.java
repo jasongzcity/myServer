@@ -1,4 +1,4 @@
-package com.jason.server.test;
+//package com.jason.server.test;
 
 import javax.servlet.*;
 import java.io.*;
@@ -22,6 +22,7 @@ public class PrimitiveServlet implements Servlet
 		PrintWriter out = response.getWriter();
 		out.println("Roses are red");
 		out.print("Violets are blue");
+		response.flushBuffer();
 	}
 	
 	@Override

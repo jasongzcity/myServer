@@ -71,6 +71,7 @@ public class OutputBuffer extends Writer
 	{
 		checkBuffer();
 		write(s.substring(off, off+len));
+		isBufferWritten = true;
 	}
 	
 	@Override
@@ -78,6 +79,7 @@ public class OutputBuffer extends Writer
 	{
 		checkBuffer();
 		byteBuffer.put(s.getBytes(response.getCharacterEncoding()));
+		isBufferWritten = true;
 	}
 	
 	/*

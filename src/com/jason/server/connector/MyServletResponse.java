@@ -655,7 +655,10 @@ public final class MyServletResponse implements HttpServletResponse
 					setHeader("Content-Length",String.valueOf(ob.bytesWrittern()));
 				}
 			}
-			setHeader("Content-Length",String.valueOf(contentLength));
+			else
+			{
+				setHeader("Content-Length",String.valueOf(contentLength));
+			}
 			if(contentType==null&&(!isRedirect || ob.isBufferWritten()))//must set contentType
 			{
 				throw new InvalidResponseException("must set content type");
