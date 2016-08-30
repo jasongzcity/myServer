@@ -139,4 +139,9 @@ public class StaticResourceProcessor
 			}
 		}
 	}
+	
+	public void recycle()
+	{
+		//nothing to do for now.
+	}
 }

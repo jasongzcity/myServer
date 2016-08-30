@@ -15,6 +15,8 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.jason.server.connector.HttpProcessor;
+
 /**
  * Process request for 
  * @author Administrator
@@ -23,6 +25,17 @@ import org.apache.logging.log4j.Logger;
 public class ServletProcessor
 {
 	private static final Logger log = LogManager.getLogger(ServletProcessor.class);
+	
+	private HttpProcessor httpProcessor;//use for callback
+	public HttpProcessor getHttpProcessor() { return httpProcessor; }
+	public void setHttpProcessor(HttpProcessor httpProcessor) { 
+		this.httpProcessor = httpProcessor; 
+	}
+	
+	public ServletProcessor(HttpProcessor httpProcessor)
+	{
+		this.httpProcessor = httpProcessor;
+	}
 	
 	public void process(HttpServletRequest request,HttpServletResponse response)
 	{
@@ -73,6 +86,11 @@ public class ServletProcessor
 		{
 			t.printStackTrace();
 		}
+	}
+	
+	public void recycle()
+	{
+		//TODO: make it recycle for next session
 	}
 }
 			

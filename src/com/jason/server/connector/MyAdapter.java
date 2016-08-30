@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import com.jason.server.connector.HttpProcessor.ActionCode;
 import com.jason.server.container.ServletProcessor;
 import com.jason.server.container.StaticResourceProcessor;
+import com.jason.server.util.collection.SynchronizedStack;
 import com.jason.server.util.exception.InvalidRequestException;
 import com.jason.server.util.http.HttpRequestUtil;
 
@@ -27,15 +28,24 @@ public class MyAdapter
 	public void setHttpProcessor(HttpProcessor httpProcessor){ this.httpProcessor = httpProcessor; }
 	public HttpProcessor getHttpProcessor(){ return httpProcessor; }
 	
-	public MyAdapter(HttpProcessor httpProcessor)
-	{
+	public MyAdapter(HttpProcessor httpProcessor){
 		this.httpProcessor = httpProcessor;
 	}
 	
+	protected SynchronizedStack<ServletProcessor> servletProcCache = new SynchronizedStack<>();
+	private int servletProcCacheMax = 50;
+	public int getServletProcCacheMax() { return servletProcCacheMax; }
+	public void setServletProcCacheSize(int max) { this.servletProcCacheMax = max; }
+	
+	protected SynchronizedStack<StaticResourceProcessor> staticProcCache = new SynchronizedStack<>();
+	private int staticProcCacheMax = 50;
+	public int getStaticProcCacheMax() { return staticProcCacheMax; }
+	public void setStaticProcCacheSize(int max) { this.staticProcCacheMax = max; }
+	
 	/**
 	 * Core method.
-	 * @param request
-	 * @param response
+	 * @param request lower level request
+	 * @param response lower level response
 	 */
 	public void service(MyServletRequest request,MyServletResponse response)
 	{
@@ -56,14 +66,31 @@ public class MyAdapter
 		//easy resource mapping ;-)
 		if(request.getRequestURI().startsWith("/servlet/"))	//calling servlet
 		{
-			//TODO: make processors recycled to avoid GC
-			ServletProcessor servletProcessor = new ServletProcessor();
+			ServletProcessor servletProcessor = servletProcCache.pop();
+			if(servletProcessor==null)
+			{
+				servletProcessor = new ServletProcessor(httpProcessor);
+			}
 			servletProcessor.process(request,response);
+			if(servletProcCache.size()<servletProcCacheMax)
+			{
+				servletProcessor.recycle();
+				servletProcCache.push(servletProcessor);
+			}
 		}
 		else
 		{
-			StaticResourceProcessor staticProcessor = new StaticResourceProcessor(httpProcessor);
+			StaticResourceProcessor staticProcessor = staticProcCache.pop();
+			if(staticProcessor==null)
+			{
+				staticProcessor = new StaticResourceProcessor(httpProcessor);
+			}			
 			staticProcessor.process(request,response);
+			if(staticProcCache.size()<staticProcCacheMax)
+			{
+				staticProcessor.recycle();
+				staticProcCache.push(staticProcessor);
+			}
 		}
 	}
 }

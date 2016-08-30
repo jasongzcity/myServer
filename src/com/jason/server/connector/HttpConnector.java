@@ -8,6 +8,7 @@ import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.jason.server.util.collection.SynchronizedStack;
 import com.jason.server.util.exception.ExceptionUtils;
 
 /**
@@ -35,6 +36,11 @@ public class HttpConnector
 	private int backLog = 3;
 	public int getBackLog() { return backLog; }
 	public void setBackLog(int backLog) { this.backLog = backLog; }
+	
+	protected SynchronizedStack<HttpProcessor> httpProcCache = new SynchronizedStack<>();
+	private int cacheMax = 100;//default, control the cache size
+	public void setCacheMax(int max){ this.cacheMax = max; }
+	public int getCacheMax(){ return cacheMax; }
 	
 	public HttpConnector(int port)
 	{
@@ -116,11 +122,20 @@ public class HttpConnector
 					continue;
 				}
 				
-				//TODO: use a synchronized data structure to 
-				//provide acceptor-threads recycled processor
-				HttpProcessor processor = new HttpProcessor(HttpConnector.this);
+				//TODO: Use poller to process socket because processor only responsible 
+				// for "accept" action. Use socket processor to find http processor for the socket.
+				HttpProcessor processor = httpProcCache.pop();
+				if(processor==null)
+				{
+					processor = new HttpProcessor(HttpConnector.this);
+				}
 				try {
 					processor.process(socket);
+					if(httpProcCache.size()<cacheMax) //discard the processor if cache is too big.
+					{
+						processor.recycle();
+						httpProcCache.push(processor);
+					}
 				} catch (Throwable t) {
 					ExceptionUtils.swallowThrowable(t);//normal exception should not damage the thread
 				} finally {

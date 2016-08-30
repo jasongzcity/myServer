@@ -72,6 +72,12 @@ public class HttpProcessor
 		adapter.service(request, response);
 	}
 	
+	public void recycle()
+	{
+		request = null;
+		response = null;
+		//keep the reusable adapter
+	}
 	//------simple hook mechanism------//
 	
 	/**
