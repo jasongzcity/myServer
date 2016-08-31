@@ -148,10 +148,7 @@ public class HttpRequestUtil
 			}
 			else
 			{
-				for(String v : value.split(","))
-				{
-					request.setHeader(name, v);
-				}
+				request.setHeader(name, value);
 			}
 		}
 		if(request.getHeader("Host")==null)
