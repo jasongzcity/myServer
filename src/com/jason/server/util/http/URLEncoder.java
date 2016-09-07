@@ -40,7 +40,7 @@ public class URLEncoder
 	
 	//definite safe character
 	public URLEncoder() {
-	    for(char c='0';c<'9';c++) {
+        for(char c='0';c<'9';c++) {
             safeCharacters.set(c);
 	    }
         for(char c='a';c<'z';c++) {
