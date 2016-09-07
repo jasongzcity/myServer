@@ -109,7 +109,7 @@ public class URLEncoder
         return hasChange ? builder.toString() : src;
     }
 	
-	//for test
+	//tested
 //	public static void main(String[] args) throws UnsupportedEncodingException
 //	{
 //	    String str = DEFAULT.encode("HEAD中文在这里tail", "GBK");
