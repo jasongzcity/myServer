@@ -70,7 +70,7 @@ public class URLEncoder
 	public String encode(String src,String enc)
 	{
 	    boolean hasChange = false;
-		Charset charset = null;
+	    Charset charset = null;
 		StringBuilder builder = new StringBuilder(src.length());
 		CharArrayWriter writer = new CharArrayWriter();
 		try {
