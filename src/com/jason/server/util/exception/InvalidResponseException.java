@@ -5,9 +5,9 @@ package com.jason.server.util.exception;
  * @author lwz
  * @since 2016-8-16 
  */
+@SuppressWarnings("serial")
 public class InvalidResponseException extends Exception 
 {
-	private static final long serialVersionUID = 2322660625756341780L;
 
 	public InvalidResponseException()
 	{

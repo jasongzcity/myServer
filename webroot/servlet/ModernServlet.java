@@ -16,11 +16,9 @@ public class ModernServlet extends HttpServlet
 	private static final long serialVersionUID = -7488396741783319940L;
 	
 	@Override
-    public void service(ServletRequest request, ServletResponse response)
+    protected void service(HttpServletRequest httpRequest, HttpServletResponse httpResponse)
         throws ServletException, IOException
 	{
-		HttpServletRequest httpRequest = (HttpServletRequest)request;
-		HttpServletResponse httpResponse = (HttpServletResponse)response;
 		httpResponse.setCharacterEncoding("utf-8");//remember to call this method before calling getWriter!
 		httpResponse.setContentType("text/html; charset=utf-8");
 		PrintWriter writer = null;
