@@ -54,7 +54,7 @@ public final class MyServletRequest implements HttpServletRequest
 	private Map<String,Object> headers = new HashMap<String,Object>();
 	private Map<String,List<String>> parameterMap = new HashMap<>();
 	private String method;
-	private String protocol;
+	private String protocol = "http";
 	private String requestUri;
 	private String queryString;
 	private String requestSessionId;
