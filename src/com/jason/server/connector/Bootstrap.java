@@ -16,55 +16,55 @@ import com.jason.server.util.ClassLoaderFactory;
   */
 public final class Bootstrap
 {
-	private static final Logger log = LogManager.getLogger(Bootstrap.class);
+    private static final Logger log = LogManager.getLogger(Bootstrap.class);
 
-	//main method should left for arguments parsing
-	public static void main(String[] args)
-	{
-		Bootstrap boot = new Bootstrap();
-		if(args.length>0)
-		{
-			boot.init(args[0]);
-		}
-		else
-		{
-			boot.init(null);
-		}
-	}
+    //main method should left for arguments parsing
+    public static void main(String[] args)
+    {
+        Bootstrap boot = new Bootstrap();
+        if(args.length>0)
+        {
+            boot.init(args[0]);
+        }
+        else
+        {
+            boot.init(null);
+        }
+    }
+
+    private static URLClassLoader servletLoader;//ClassLoader for servlets 
+    //Notice: URLClassLoader mainly rewrite findClass method 
+    //but still use parent-delegation.
+    //So it can still find javax.servlet.* because 
+    //they are loaded by its parent(System-loader).
+    public static URLClassLoader getServletLoader(){ return servletLoader; }
 	
-	private static URLClassLoader servletLoader;//ClassLoader for servlets 
-	//Notice: URLClassLoader mainly rewrite findClass method 
-	//but still use parent-delegation.
-	//So it can still find javax.servlet.* because 
-	//they are loaded by its parent(System-loader).
-	public static URLClassLoader getServletLoader(){ return servletLoader; }
-	
-	public void init(String port)
-	{
-		initClassLoader();
-		HttpServer server = null;
-		if(port != null)
-		{
-			server = new HttpServer(Integer.parseInt(port));
-		}
-		else
-		{
-			server = new HttpServer();
-		}
+    public void init(String port)
+    {
+        initClassLoader();
+        HttpServer server = null;
+        if(port != null)
+        {
+            server = new HttpServer(Integer.parseInt(port));
+        }
+        else
+        {
+            server = new HttpServer();
+        }
 		
-		server.init();
-		server.start();
-		server.await();
-		server.shutdown();
-	}
+        server.init();
+        server.start();
+        server.await();
+        server.shutdown();
+    }
 	
-	/**
-	 *  Create ClassLoader for servlets
-	 */
-	public void initClassLoader()
-	{
-		log.info("initializing class loaders");
-		File[] files = { new File(HttpServer.SERVLET_DIR) };//put servlets in servlet_dir
-		servletLoader = ClassLoaderFactory.createClassLoader(files,null,null);
-	}
+    /**
+     *  Create ClassLoader for servlets
+     */
+    public void initClassLoader()
+    {
+        log.info("initializing class loaders");
+        File[] files = { new File(HttpServer.SERVLET_DIR) };//put servlets in servlet_dir
+        servletLoader = ClassLoaderFactory.createClassLoader(files,null,null);
+    }
 }
