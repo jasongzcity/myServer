@@ -1,28 +1,22 @@
 package com.jason.server.util.buf;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-
 /**
- * String like recyclable char chunk.
+ * Recyclable byte buffer for byte storage.
+ * It has String-like methods.
+ * Its reuse mechanism is just like CharChunk.
  * @author lwz
- * @since 2016-9-8 
- * @see org.apache.tomcat.util.buf.CharChunk
+ * @since 2016-9-9 
+ * @see org.jason.server.util.buf.CharChunk
+ * @see org.jason.server.util.buf.ByteChunkFactory
  *
  */
-public class CharChunk implements Chunk
+public class ByteChunk implements Chunk
 {
-    private static final Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
-    
     //----fields and getter,setter----
-    private char[] buff;    //storage
+    private byte[] buff;    //storage
     private int start;          //start index of the buff
-    private int end;            //end index of the buff
-    
-    private Charset charset;
-    public void setCharset(Charset charset) { this.charset = charset; }
-    public Charset getCharset() { return charset; }
-    
+    private int end;             //end index of the buff
+
     //flag for factory recycle
     private boolean isUsing;
     public void setUsing(boolean b) { this.isUsing = b; }
@@ -36,14 +30,14 @@ public class CharChunk implements Chunk
     
     //----Constructors,should only be instantiated by factory----
     //must specify the capacity
-    CharChunk(int capacity,int limit)
+    ByteChunk(int capacity,int limit)
     {
-        buff = new char[capacity];
+        buff = new byte[capacity];
         setLimit(limit);
         setUsing(true);
     }
     
-    CharChunk(int capacity)
+    ByteChunk(int capacity)
     {
         this(capacity,-1);//no limit
     }
@@ -58,16 +52,8 @@ public class CharChunk implements Chunk
     public void recycle()
     {
         end = start = 0;
-        charset = null;
         limit = -1;
         isUsing = false;
-        CharChunkFactory.FACTORY.recycle(this);
+        ByteChunkFactory.FACTORY.recycle(this);
     }
-    
-    public char[] getBuffer()
-    {
-        return buff;
-    }
-    
-    
 }
