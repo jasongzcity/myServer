@@ -41,7 +41,7 @@ public class SynchronizedStack<T>
     }
     
     @SuppressWarnings("unchecked")
-    public synchronized T	pop() {
+    public synchronized T pop() {
         if(top>0) {
             return (T)stack[--top];
         } else {
@@ -58,19 +58,19 @@ public class SynchronizedStack<T>
         }
     }
 	
-	public synchronized int size() {
-	    return top;
-	}
+    public synchronized int size() {
+        return top;
+    }
 	
-	public synchronized boolean isEmpty() {
-	    return top==0;
-	}
+    public synchronized boolean isEmpty() {
+        return top==0;
+    }
 	
-	public synchronized void reset() {
-	    top = 0;
-	}
+    public synchronized void reset() {
+        top = 0;
+    }
 	
-	public synchronized int capacity() {
-	    return stack.length;
-	}
+    public synchronized int capacity() {
+        return stack.length;
+    }
 }
