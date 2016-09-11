@@ -8,14 +8,14 @@ package com.jason.server.util.exception;
 @SuppressWarnings("serial")
 public class InvalidResponseException extends Exception 
 {
-
-	public InvalidResponseException()
-	{
-		super();
-	}
-	
-	public InvalidResponseException(String message)
-	{
-		super(message);
-	}
+    
+    public InvalidResponseException()
+    {
+        super();
+    }
+    
+    public InvalidResponseException(String message)
+    {
+        super(message);
+    }
 }

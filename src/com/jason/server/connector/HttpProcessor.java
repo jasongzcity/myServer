@@ -20,85 +20,85 @@ import com.jason.server.util.http.SocketInputStream;
   */
 public class HttpProcessor
 {	
-	private static final Logger log = LogManager.getLogger(HttpProcessor.class);
+    private static final Logger log = LogManager.getLogger(HttpProcessor.class);
+    
+    //////// fields/////////
+    private HttpConnector connector;
+    protected MyServletRequest request;
+    protected MyServletResponse response;
+    protected MyAdapter adapter;
+    public void setAdapter(MyAdapter adapter){ this.adapter = adapter; }
+    public MyAdapter getAdapter(){ return adapter; }
 	
-	//////// fields/////////
-	private HttpConnector connector;
-	protected MyServletRequest request;
-	protected MyServletResponse response;
-	protected MyAdapter adapter;
-	public void setAdapter(MyAdapter adapter){ this.adapter = adapter; }
-	public MyAdapter getAdapter(){ return adapter; }
+    /**
+     * Constructor.
+     * Wrap the connector
+     * @param conn
+     */
+    public HttpProcessor(HttpConnector conn)
+    {
+        this.connector = conn;
+        adapter = new MyAdapter(this);
+    }
 	
-	/**
-	 * Constructor.
-	 * Wrap the connector
-	 * @param conn
-	 */
-	public HttpProcessor(HttpConnector conn)
-	{
-		this.connector = conn;
-		adapter = new MyAdapter(this);
-	}
+    /**
+     * process the socket 
+     * @param socket
+     */
+    public void process(Socket socket)
+    {
+        //TODO: use socket wrapper,to screen lower level detail
+        SocketInputStream input  = null;
+        OutputStream output = null;
+        try
+        {
+            input = new SocketInputStream(socket.getInputStream(),2048);
+            output = socket.getOutputStream();
+            request = new  MyServletRequest();
+            response = new MyServletResponse(output);
+            
+            request.setInputStream(input);
+            response.setRequest(request);
+        }
+        catch(IOException e)
+        {
+            log.error("IO Error while setting up request",e);
+            try {
+                socket.close();
+            } catch (IOException e1) {
+                ExceptionUtils.swallowException(e1);
+            }
+        }
+        adapter.service(request, response);
+    }
 	
-	/**
-	 * process the socket 
-	 * @param socket
-	 */
-	public void process(Socket socket)
-	{
-		//TODO: use socket wrapper,to screen lower level detail
-		SocketInputStream input  = null;
-		OutputStream output = null;
-		try
-		{
-			input = new SocketInputStream(socket.getInputStream(),2048);
-			output = socket.getOutputStream();
-			request = new  MyServletRequest();
-			response = new MyServletResponse(output);
-
-			request.setInputStream(input);
-			response.setRequest(request);
-		}
-		catch(IOException e)
-		{
-			log.error("IO Error while setting up request",e);
-			try {
-				socket.close();
-			} catch (IOException e1) {
-				ExceptionUtils.swallowException(e1);
-			}
-		}
-		adapter.service(request, response);
-	}
+    public void recycle()
+    {
+        request = null;
+        response = null;
+        //keep the reusable adapter
+    }
+    //------simple hook mechanism------//
 	
-	public void recycle()
-	{
-		request = null;
-		response = null;
-		//keep the reusable adapter
-	}
-	//------simple hook mechanism------//
+    /**
+     * hook method for child processors to call
+     * Note: status code should be set in response object
+     * @param actionCode action command
+     */
+    public void action(ActionCode actionCode)
+    {
+        switch(actionCode)
+        {
+            case COMMIT:{
+                response.commit();
+            }
+        }
+    }
 	
-	/**
-	 * hook method for child processors to call
-	 * Note: status code should be set in response object
-	 * @param actionCode action command
-	 */
-	public void action(ActionCode actionCode)
-	{
-		switch(actionCode)
-		{
-			case COMMIT:{
-				response.commit();
-			}
-		}
-	}
-	
-	public static enum ActionCode
-	{
-		COMMIT;
-	}
+    public static enum ActionCode
+    {
+        COMMIT;
+    }
 }
 			
 			

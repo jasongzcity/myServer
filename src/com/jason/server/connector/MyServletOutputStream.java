@@ -14,41 +14,41 @@ import javax.servlet.WriteListener;
 public class MyServletOutputStream extends ServletOutputStream 
 {
 	
-	protected OutputBuffer ob;
+    protected OutputBuffer ob;
+    
+    public MyServletOutputStream(OutputBuffer ob)
+    {
+        this.ob = ob;   
+    }
 	
-	public MyServletOutputStream(OutputBuffer ob)
-	{
-		this.ob = ob;
-	}
-	
-	@Override
-	public boolean isReady() {
-		return false;
-	}
+    @Override
+    public boolean isReady() {
+        return false;
+    }
 
-	@Override
-	public void setWriteListener(WriteListener arg0) {
-		return;
-	}
+    @Override
+    public void setWriteListener(WriteListener arg0) {
+        return;
+    }
 
-	/**
-	 *  Must associate this method with underlying OutputBuffer
-	 *  @param b byte actually.upper level methods have already block the higher 8-bit
-	 *  @throws IOException 
-	 */
-	@Override
-	public void write(int b) throws IOException 
-	{
-		ob.writeByte((byte)b);
-	}
+    /**
+     *  Must associate this method with underlying OutputBuffer
+     *  @param b byte actually.upper level methods have already block the higher 8-bit
+     *  @throws IOException 
+     */
+    @Override
+    public void write(int b) throws IOException 
+    {
+        ob.writeByte((byte)b);
+    }
 	
-	@Override
-	public void flush()
-	{
-		try {
-			ob.flush();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
+    @Override
+    public void flush()
+    {
+        try {
+            ob.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
