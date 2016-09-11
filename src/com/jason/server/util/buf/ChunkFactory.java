@@ -4,23 +4,26 @@ package com.jason.server.util.buf;
  * Factory class for Chunks.
  * Use a simple CharChunk[][] 2 dimension array to store Chunks.
  * 
- * In this class,Chunks are cached in a bin,the CharChunks in a bin have the same capacity,
+ * In this class,Chunks are cached in a bin,the Chunks in the same bin have the same capacity,
  * and bins are in an array in the format like BINS[(CharChunk's capacity)/2].
  * Saving the Chunks according to their size, so that when applications require
  * Chunks with specific capacity, the factory don't need to iterate all the 
  * Chunks it cached.
  * 
  * @author lwz
- * @since 2016-9-9 
+ * @since 2016-9-9
+ * 
+ * Notice: this mechanism is experimental, may cause performance bottleneck
+ * when frequently used.
  */
 public abstract class ChunkFactory<T extends Chunk>
 {
     //the maximum index of the array buff
-    //only cache CharChunks whose capacity are below 60
+    //only cache Chunks whose capacity are below 60
     protected static final int MAX_INDEX = 30;
     //cache size of every bin
     protected static final int CACHE_SIZE = 15;
-    //stores arrays of CharChunks
+    //stores arrays of Chunks
     protected final Object[] BINS = new Object[MAX_INDEX];
     
     protected ChunkFactory()
@@ -35,7 +38,7 @@ public abstract class ChunkFactory<T extends Chunk>
     }
     
     /**
-     * Get CharChunk without limit size.
+     * Get Chunk without limit size.
      * @param capacity the capacity of the CharChunk
      * @return the required CharChunk from cache or newly created.
      */
@@ -45,17 +48,17 @@ public abstract class ChunkFactory<T extends Chunk>
     }
     
     /**
-     * Get CharChunk by specific capacity and limit size
+     * Get Chunk by specific capacity and limit size
      * @param capacity the capacity
      * @param limit the limit size
-     * @return the required CharChunk from cache or newly created.
+     * @return the required Chunk from cache or newly created.
      */
     public abstract T getInstance(int capacity,int limit);
     
     /**
-     * push the CharChunk back to cache if the cache still have space.
+     * push the Chunk back to cache if the cache still have space.
      * else ignore, let it be GCed.
-     * @param charChunk CharChunk to be cached.
+     * @param chunk Chunk to be cached.
      */
     public void recycle(T chunk)
     {
