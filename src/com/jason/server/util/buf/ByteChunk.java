@@ -338,4 +338,5 @@ public class ByteChunk implements Chunk
 //        System.out.println(bc.indexOf(new String("²¿·Ö").getBytes(StandardCharsets.UTF_8)));
 //        System.out.println(bc.indexOf((byte)'d'));
 //    }
+    
 }
