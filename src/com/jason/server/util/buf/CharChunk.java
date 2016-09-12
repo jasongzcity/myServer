@@ -59,11 +59,25 @@ public class CharChunk implements Chunk
         public void realWritechars(char[] src, int off, int len);
     }
     
+    /**
+     * @return the size of this CharChunk
+     */
     public int getSize() { return end-start+1; }
     
+    /**
+     * @return the capacity of this CharChunk
+     */
     public int getCapacity() { return buff.length; }
     
+    /**
+     * @return the underlying buffer.
+     */
     public char[] getBuffer() { return buff; }
+    
+    /**
+     * @return the available free space at the end
+     */
+    public int getAvailableSize() { return getCapacity()-1-end; }
     
     //----Constructors,should only be instantiated by factory----
     //must specify the capacity
@@ -104,7 +118,7 @@ public class CharChunk implements Chunk
     
     public String toString()
     {
-        return new String(buff);
+        return new String(buff,start,getSize());
     }
     
     //---------------------- char manipulation ---------------
@@ -120,7 +134,7 @@ public class CharChunk implements Chunk
     public CharChunk append(char[] chars, int off, int len)
     {
         makeSpace(len);
-        if(getSize()+len>getCapacity())//flush or will be Out Of Bound!
+        if(len>getAvailableSize())//flush or will be Out Of Bound!
         {
             flushBuffer();
         }
@@ -147,14 +161,19 @@ public class CharChunk implements Chunk
      * @param b char to be written
      * @return the charChunk itself.
      */
-    public CharChunk append(char b)
+    public CharChunk append(char c)
     {
         makeSpace(1);
         if(getSize()+1>getCapacity())
         {
             flushBuffer();
         }
-        buff[++end] = b;
+        buff[++end] = c;
+        return this;
+    }
+    
+    public CharChunk append(String s)
+    {
         return this;
     }
     
@@ -178,8 +197,7 @@ public class CharChunk implements Chunk
         }
         else
         {
-            int endRemain = getCapacity()-end-1;//the space in the end of array.
-            if(endRemain<newSpace)//make the array begin with index 0.
+            if(getAvailableSize()<newSpace)//make the array begin with index 0.
             {
                 arraycopy(buff,start,buff,0,getSize());
                 end = getSize()-1;
@@ -226,9 +244,9 @@ public class CharChunk implements Chunk
      * @param b the require char
      * @return the index of the require char. -1 if not found
      */
-    public int indexOf(char b)
+    public int indexOf(char c)
     {
-        return indexOf(b,start);
+        return indexOf(c,start);
     }
     
     /**
@@ -237,14 +255,14 @@ public class CharChunk implements Chunk
      * @param begin the beginning index 
      * @return the index of the require char. -1 if not found
      */
-    public int indexOf(char b,int begin)
+    public int indexOf(char c,int begin)
     {
         if(begin<start) { begin = start; }
         if(begin>end) { return -1; }
         int i = begin;
         while(i<=end)
         {
-            if(buff[i]==b)
+            if(buff[i]==c)
             {
                 return i;
             }

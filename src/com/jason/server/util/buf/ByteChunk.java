@@ -73,15 +73,30 @@ public class ByteChunk implements Chunk
         public void realWriteBytes(byte[] src, int off, int len);
     }
     
+    /**
+     * @return the size of this ByteChunk.
+     */
     public int getSize() { return end-start+1; }
     
+    /**
+     * @return the underlying buffer.
+     */
     public byte[] getBuffer() { return buff; }
     
     /**
-     * get the underlying buff's the capacity
      * @return the underlying buff's the capacity
      */
     public int getCapacity() { return buff.length; }
+    
+    /**
+     * @return the available free space at the end
+     */
+    public int getAvailableSize() { return getCapacity()-1-end; }
+    
+    /**
+     * @return if empty return true.
+     */
+    public boolean isEmpty() { return getSize()==0; }
     
     //----Constructors,should only be instantiated by factory----
     //must specify the capacity
@@ -152,7 +167,7 @@ public class ByteChunk implements Chunk
     public ByteChunk append(byte[] bytes, int off, int len)
     {
         makeSpace(len);
-        if(getSize()+len>getCapacity())//flush or will be Out Of Bound!
+        if(len>getAvailableSize())//flush or will be Out Of Bound!
         {
             flushBuffer();
         }
@@ -190,6 +205,18 @@ public class ByteChunk implements Chunk
         return this;
     }
     
+    /**
+     * Append a String to this ByteChunk.
+     * Simply transform this string to bytes and calls append(byte[])
+     * @param s the appending string
+     * @return this ByteChunk
+     */
+    public ByteChunk append(String s)
+    {
+        Charset cs = (charset==null)? DEFAULT_CHARSET : charset;
+        return append(s.getBytes(cs));
+    }
+    
     //Make new space for the incoming bytes
     protected void makeSpace(int newSpace)
     {
@@ -210,8 +237,7 @@ public class ByteChunk implements Chunk
         }
         else
         {
-            int endRemain = getCapacity()-end-1;//the space in the end of array.
-            if(endRemain<newSpace)//make the array begin with index 0.
+            if(getAvailableSize()<newSpace)//make the array begin with index 0.
             {
                 arraycopy(buff,start,buff,0,getSize());
                 end = getSize()-1;

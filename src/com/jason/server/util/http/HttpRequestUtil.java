@@ -67,7 +67,7 @@ public class HttpRequestUtil
         {
             String queryString = uri.substring(question+1);
             request.setQueryString(queryString);
-            parseQueryString(queryString,request);
+            //parseQueryString(queryString,request);
             uri = uri.substring(0,question);//ignore '?'
         }
         else
@@ -187,14 +187,13 @@ public class HttpRequestUtil
         }
     }
     
-    /*
-     * parse the query string and put them in the request's parameter 
-     * @param queryString the query string from url
-     * @param request the request object
-     */
-    private static void parseQueryString(String queryString,MyServletRequest request)
-    {
-        //TODO: to be finished
-        
-    }
+//    /*
+//     * parse the query string and put them in the request's parameter 
+//     * @param queryString the query string from url
+//     * @param request the request object
+//     */
+//    private static void parseQueryString(String queryString,MyServletRequest request)
+//    {
+//        
+//    }
 }
