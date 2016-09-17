@@ -46,6 +46,7 @@ public class ModernServlet extends HttpServlet
                 writer.println("</div>");
             }
             Enumeration<String> paramEnum = httpRequest.getParameterNames();
+            writer.println("<h2><center>Parameters</center></h2>");
             while(paramEnum.hasMoreElements()) {
                 String paramName = paramEnum.nextElement();
                 String paramValue = httpRequest.getParameter(paramName);

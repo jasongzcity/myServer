@@ -82,10 +82,6 @@ public class SocketInputStream extends InputStream
             }
         }
         byteBuffer = buffer;
-		
-        if(log.isDebugEnabled()){
-            log.debug(new String(byteBuffer));
-        }
     }
 	
     @Override

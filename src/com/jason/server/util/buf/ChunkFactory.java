@@ -20,7 +20,7 @@ public abstract class ChunkFactory<T extends Chunk>
 {
     //the maximum index of the array buff
     //only cache Chunks whose capacity are below 60
-    protected static final int MAX_INDEX = 30;
+    protected static final int MAX_INDEX = 60;
     //cache size of every bin
     protected static final int CACHE_SIZE = 15;
     //stores arrays of Chunks
@@ -62,12 +62,12 @@ public abstract class ChunkFactory<T extends Chunk>
      */
     public void recycle(T chunk)
     {
-        int index = (chunk.getCapacity()+1)>>2;
-        if(index>MAX_INDEX)//too large,no cache
+        int capacity = chunk.getCapacity();
+        if(capacity>MAX_INDEX)//too large,no cache
         {
             return;
         }
-        putIfNull(chunk,(Object[])BINS[index]);
+        putIfNull(chunk,(Object[])BINS[capacity-1]);
     }
     
     //check if usable CharChunk in the array,return null if none.

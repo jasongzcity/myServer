@@ -16,8 +16,11 @@ public class ByteChunkFactory extends ChunkFactory<ByteChunk>
     @Override
     public ByteChunk getInstance(int capacity, int limit)
     {
-        int index = (capacity+1)>>1;
-        Object[] array = (Object[])BINS[index];
+        if(capacity>MAX_INDEX)
+        {
+            return null;
+        }
+        Object[] array = (Object[])BINS[capacity-1];
         ByteChunk result = (ByteChunk) getIfCached(array);
         if(result!=null)
         {

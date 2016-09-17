@@ -1,7 +1,14 @@
-1. This project is like the "note" and "practice" during my reading of How Tomcat Works and studying of the Tomcat's source code,therefore some of the codes are inspired by Tomcat's source code.   
+MyServer
 
+This is an experimental project of an HTTP Server.It Supports HTTP/1.1 and implements some of the Servlet Spec. interfaces for upper level programming.
 
+While writing this, I mainly focus on the network connection and the HTTP protocol's parsing and constructing.
 
+Modules in the server:
+1.connector. It is responsible for the connection with the client, and the lower level details of parsing and writing the HTTP message byte by byte.
+2.container. The container of resources. It is responsible for resources mapping & storing user's status etc.
+3.util. The utility classes for the server.Some data structures for object caching to avoid GC. Some utility methods for byte manipulation and HTTP message parsing.
 
-2.The packages in com.jason.server may have functions overlapped,because the book How Tomcat Worksis introducing the modules in tomcat step by step therefore the later module may have functions that have already
-been realized in earlier module.
+Check BUIDING_GUIDE.TXT for a quick-start.
+
+ 

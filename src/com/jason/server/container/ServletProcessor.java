@@ -19,9 +19,9 @@ import com.jason.server.connector.MyServletRequest;
 import com.jason.server.connector.MyServletResponse;
 
 /**
- * Process request for 
- * @author Administrator
- *
+ * Process request for servlets
+ * @author lwz
+ * @since 2016-9-17 
  */
 public class ServletProcessor
 {

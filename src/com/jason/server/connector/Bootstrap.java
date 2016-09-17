@@ -19,17 +19,10 @@ public final class Bootstrap
     private static final Logger log = LogManager.getLogger(Bootstrap.class);
 
     //main method should left for arguments parsing
-    public static void main(String[] args)
+    public static void main(String[] args) throws InterruptedException
     {
         Bootstrap boot = new Bootstrap();
-        if(args.length>0)
-        {
-            boot.init(args[0]);
-        }
-        else
-        {
-            boot.init(null);
-        }
+        boot.init(args);
     }
 
     private static URLClassLoader servletLoader;//ClassLoader for servlets 
@@ -39,23 +32,27 @@ public final class Bootstrap
     //they are loaded by its parent(System-loader).
     public static URLClassLoader getServletLoader(){ return servletLoader; }
 	
-    public void init(String port)
+    public void init(String[] arguments)
     {
-        initClassLoader();
-        HttpServer server = null;
-        if(port != null)
-        {
-            server = new HttpServer(Integer.parseInt(port));
+        //using default port
+        HttpServer server = new HttpServer();
+        String command = "start"; //default start
+        if(arguments.length>0) {
+            command = arguments[0];
         }
-        else
+        if(command.equals("start"))
         {
-            server = new HttpServer();
+            initClassLoader();
+        	
+            server.init();
+            server.start();
+            server.await();
+            server.shutdown();
         }
-		
-        server.init();
-        server.start();
-        server.await();
-        server.shutdown();
+        else if(command.equals("shutdown"))
+        {
+            server.shutdownServer();
+        }
     }
 	
     /**

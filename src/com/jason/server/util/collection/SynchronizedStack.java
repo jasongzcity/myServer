@@ -31,7 +31,7 @@ public class SynchronizedStack<T>
             return;
         }
         Object[] newStack = new Object[stack.length<<1];
-        System.arraycopy(stack, 0,newStack, 0, stack.length);
+        System.arraycopy(stack, 0,newStack, 0, top);
         stack = newStack;
     }
 	

@@ -186,14 +186,4 @@ public class HttpRequestUtil
             begin = semicolon+1;
         }
     }
-    
-//    /*
-//     * parse the query string and put them in the request's parameter 
-//     * @param queryString the query string from url
-//     * @param request the request object
-//     */
-//    private static void parseQueryString(String queryString,MyServletRequest request)
-//    {
-//        
-//    }
 }

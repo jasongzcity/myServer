@@ -20,8 +20,8 @@ public class ExceptionUtils
      */
     public static void swallowException(Exception e)
     {
-        if(log.isDebugEnabled()){
-            log.debug("",e);
+        if(log.isTraceEnabled()){
+            log.trace("",e);
         }
     }
     
@@ -37,8 +37,8 @@ public class ExceptionUtils
             log.error("",t);
             throw (Error)t;
         }
-        if(log.isDebugEnabled()){
-            log.debug("",t);
+        if(log.isTraceEnabled()){
+            log.trace("",t);
         }
     }
     

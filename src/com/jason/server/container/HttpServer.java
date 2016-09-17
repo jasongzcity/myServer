@@ -3,9 +3,11 @@ package com.jason.server.container;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,29 +26,29 @@ import com.jason.server.util.exception.ExceptionUtils;
 public class HttpServer
 {
     private static final Logger log = LogManager.getLogger(HttpServer.class);
+
+    //========static final fields==============
+    //simulate a config file here :-)
     public static final String WEB_ROOT = System.getProperty("server.base")+File.separator+"webroot";
     public static final String STATIC_DIR = WEB_ROOT+File.separator+"static";
     public static final String SERVLET_DIR = WEB_ROOT+File.separator+"servlet";
     public static final String SHUTDOWN = "SHUTDOWN";//shutdown command
-    
+    public static final String HOST = "127.0.0.1";
+  //port listening for connection,default 8080
+    public static final int PORT = 8080;
     //port listening for shutdown command
-    private final int shudownPort = 8005;
+    public static final int SHUTDOWNPORT = 8005;
+    
     private boolean stopped;
     private ServerSocket serverSocket;
     
-    //port listening for connection,default 8080
-    private int port = 8080;
     private HttpConnector connector;
 	
-    public HttpServer(int port)
-    {
-        this.port = port;   
-    }
     public HttpServer(){}
 	
     public void init()
     {
-        connector = new HttpConnector(port);
+        connector = new HttpConnector(PORT);
         connector.init();
     }
 	
@@ -61,7 +63,7 @@ public class HttpServer
         try
         {
             //shutdown port bind on local host
-            serverSocket = new ServerSocket(shudownPort,1,InetAddress.getByName("127.0.0.1"));
+            serverSocket = new ServerSocket(SHUTDOWNPORT,1,InetAddress.getByName(HOST));
         }
         catch(Exception e)
         {
@@ -93,7 +95,7 @@ public class HttpServer
                 } catch (IOException e) {
                     b = -1;
                 }
-                if(b<32)
+                if(b<32)//control characters
                 {
                     break;
                 }
@@ -112,7 +114,9 @@ public class HttpServer
         }//while
     }
 
-    //shutdown this server instance
+    /**
+     *  shutdown this server instance
+     */
     public void shutdown()
     {
         try {
@@ -122,5 +126,21 @@ public class HttpServer
         }
         connector.shutdown();
         log.info("server has been destroyed");
+    }
+    
+    /**
+     * Send shutdown command to the server.
+     */
+    public void shutdownServer()
+    {
+        try {
+            Socket s = new Socket(HOST,SHUTDOWNPORT);
+            OutputStream out = s.getOutputStream();
+            out.write(SHUTDOWN.getBytes(StandardCharsets.US_ASCII));
+            out.close();
+            s.close();
+        } catch(IOException ioe) {
+            ioe.printStackTrace();
+        }
     }
 }

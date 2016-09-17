@@ -1,0 +1,23 @@
+BUILDING GUIDE
+
+To build up this server, user should prepare:
+1.JDK 8 and set environmental variable JAVA_HOME to the JDK home directory.
+2.Ant 1.96 and plus for building up the project.
+
+Notice:
+the version of JVM must be JDK 8 for some codes are using Stream Framework's API.
+
+Steps to build:
+1.git -clone https://github.com/jasongzcity/myServer.git
+2.cd ${Repository Directory}
+3.ant deploy (assume ant has already been set in the ${PATH})
+4.cd ${Repository Directory}/output/bin
+5.call ./startup
+6.done!
+
+whenever user wants to shutdown the server, call ./shutdown.
+
+There are some test resources in the "webroot" directory already.
+Try to request for the resources through browser :-).
+User can also put some other resources in the webroot.
+Put static resources in the static directory, and servlet classes in the "servlet" dir.

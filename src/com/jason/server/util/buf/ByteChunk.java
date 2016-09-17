@@ -347,22 +347,4 @@ public class ByteChunk implements Chunk
         }
         return -1;
     }
-    
-//    public static void main(String[] args)
-//    {
-//        ByteChunk bc = new ByteChunk(10);
-//        bc.append(new String("  abcd  ").getBytes(StandardCharsets.UTF_8));
-//        //bc.append(ByteHelper.CRLF);
-//        //bc.append(new String("abcd").getBytes(StandardCharsets.UTF_8),2,2);
-//        //System.out.println(bc.substract()==ByteHelper.SPACE);
-//        byte[] temp = new byte[15];
-//        bc.substract(temp, 0, 4);
-//        System.out.println(new String(temp , StandardCharsets.UTF_8));
-//        System.out.println(bc.toString(StandardCharsets.UTF_8));
-//        bc.append(new String("这里有部分中文").getBytes(StandardCharsets.UTF_8));
-//        System.out.println(bc.toString(StandardCharsets.UTF_8));
-//        System.out.println(bc.indexOf(new String("部分").getBytes(StandardCharsets.UTF_8)));
-//        System.out.println(bc.indexOf((byte)'d'));
-//    }
-    
 }

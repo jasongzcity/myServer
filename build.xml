@@ -1,29 +1,56 @@
 <?xml version="1.0"?>
 
-<project name="server" default="run" basedir=".">
-	
-	<property name="lib.dir" value="${basedir}/lib" />
-	<property  name="output.dir" value="${basedir}/build" />
-	<property name="classes.dir" value="${output.dir}/classes" />
-	
-	<path id="classpath">
-        <fileset dir="${lib.dir}" includes="**/*.jar"/>
-    </path>
+<project name="MyServer" default="deploy" basedir=".">
 
+    <!--  basedir file & dirs  -->
+    <property name="output" value="${basedir}/output"/>
+    <property name="lib" value="${basedir}/lib" />
+    <property name="source" value="${basedir}/src"/>
+    <property name="resource" value="${basedir}/resource"/>
+    <property name="bin" value="${basedir}/bin"/>
+    <property name="lib.servlet-api.jar" value="${lib}/servlet-api.jar"/>
+    <property name="lib.el-api.jar" value="${lib}/el-api.jar"/>
+    
+    <!-- the output of deploy  -->
+    <property name="output.lib" value="${output}/lib"/>
+    <property name="output.classes" value="${output}/classes"/> <!-- classes storage  -->
+    <property name="output.binary" value="${output}/bin"/>
+    <property name="webroot" value="${output}/webroot"/>
+    <property name="webroot.static" value="${webroot}/static"/>
+    <property name="webroot.servlet" value="${webroot}/servlet"/>
+
+    <path id="lib.classpath">
+        <fileset dir="${lib}" includes="**/*.jar"/>
+    </path>
+    
+    <path id="servlet-classpath">
+        <fileset dir="${lib}">
+            <include name="servlet-api.jar"/>
+            <include name="el-api.jar"/>
+        </fileset>
+    </path>	
+
+<!--  targets -->
     <target name="clean">
-        <delete dir="${output.dir}"/>
+        <delete dir="${output}"/>
     </target>
 
     <target name="compile">
-        <mkdir dir="${classes.dir}"/>
-        <javac srcdir="src" destdir="build/classes" >
-        	    <classpath>
-        	    		<path refid="classpath" />
-        	    </classpath>
-    	   </javac>
+        <mkdir dir="${output.classes}"/>
+        <javac srcdir="${source}" destdir="${output.classes}" >
+            <classpath>
+                <path refid="lib.classpath" />
+            </classpath>
+        </javac>
+        <mkdir dir="${webroot.servlet}"/>
+        <javac srcdir="${resource}" destdir="${webroot.servlet}" > <!-- compile servlets  -->
+            <classpath>
+                <path refid="servlet-classpath"/>
+            </classpath>
+        </javac>	
     </target>
     
-<!--
+<!-- 
     <target name="jar">
         <mkdir dir="build/jar"/>
         <jar destfile="build/jar/servlet-api-3.1" basedir="build/classes">
@@ -34,13 +61,34 @@
     </target>
 -->
 
-    <target name="run" depends="clean,compile" >
-        <java classname="com.jason.server.simpleContainer.HttpServer1"  fork="true">
+    <target name="deploy" depends="clean,compile"> <!-- copy resource to output -->
+        <mkdir dir="${webroot.static}"/>
+        <mkdir dir="${output.lib}"/>
+        <mkdir dir="${output.binary}"/>
+        <copy todir="${webroot.static}">
+            <fileset dir="${resource}">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+        <copy todir="${output.lib}">
+            <fileset dir="${lib}"/>
+       </copy>
+       <copy todir="${output.binary}">
+            <fileset dir="${bin}"/>
+       </copy>
+    </target>
+
+<!-- use cautiously it will cause a running JVM in the background -->
+    <target name="run" depends="deploy" >
+        <java classname="com.jason.server.connector.Bootstrap"  fork="true">
+        	<sysproperty key="server.base" path="${output}"/>
             <classpath>
-                <!-- <pathelement path="build/classes" /> -->
-                <path refid="classpath" />
+                <pathelement location="${output.classes}"/>
+                <fileset dir="${output.lib}">
+                	<include name="**/*.jar"/>
+                </fileset>
             </classpath>
-         </java>
+        </java>
     </target>
 
 

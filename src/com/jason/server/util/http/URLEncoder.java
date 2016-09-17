@@ -108,13 +108,4 @@ public class URLEncoder
         }
         return hasChange ? builder.toString() : src;
     }
-	
-	//tested
-//	public static void main(String[] args) throws UnsupportedEncodingException
-//	{
-//	    String str = DEFAULT.encode("HEAD中文在这里tail", "GBK");
-//	    System.out.println(str);
-//	    System.out.println(URLDecoder.decode(str,"GBK"));
-//	    System.out.println(URLDecoder.decode("%E6%B5%8B%E8%AF%95%E6%90%9C%E7%B4%A2","UTF-8"));
-//	}
 }

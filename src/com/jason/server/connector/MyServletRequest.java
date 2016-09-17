@@ -46,6 +46,7 @@ import com.jason.server.util.http.URLDecoder;
  * 
  * @author lwz
  * @since 2016-8-4 
+ * TODO: store headers in Chunks
  */
 public final class MyServletRequest implements HttpServletRequest 
 {
@@ -660,7 +661,7 @@ public final class MyServletRequest implements HttpServletRequest
             {
                 return true;
             }
-            paramName = queryString.substring(beginIndex+1, equalIndex);//temp save param name.
+            paramName = queryString.substring(beginIndex, equalIndex);//temp save param name.
             if(paramName.indexOf('%')!=-1)
             {
                 try {
@@ -684,6 +685,7 @@ public final class MyServletRequest implements HttpServletRequest
                 }
             }
             setParameter(paramName,paramValue);
+            beginIndex++;//scan for next pair
         }
         return true;
     }

@@ -40,5 +40,4 @@ public final class HTMLHelper
     public static final byte[] ELE_CENTER_BYTE = ELE_CENTER.getBytes(StandardCharsets.US_ASCII);
     public static final String ELE_CENTER_END = "</center>";
     public static final byte[] ELE_CENTER_END_BYTE = ELE_CENTER_END.getBytes(StandardCharsets.US_ASCII);
-
 }

@@ -68,7 +68,7 @@ public class StaticResourceProcessor
             if(target.isDirectory())   //no available index for this directory
             {
                 response.setError(true);
-                response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 httpProcessor.action(ActionCode.COMMIT);
                 return;
             }
@@ -120,10 +120,6 @@ public class StaticResourceProcessor
             while((byteCount=fis.read(buffer,0,BUFFER_SIZE))!=-1)
             {
                 ob.realWriteBytes(buffer,0,byteCount);
-                
-                if(log.isDebugEnabled()){
-                    log.debug(new String(buffer));
-                }
             }
             ob.close();
             response.setCommited(true);

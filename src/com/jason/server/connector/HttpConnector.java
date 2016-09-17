@@ -38,6 +38,7 @@ public class HttpConnector
     public void setBackLog(int backLog) { this.backLog = backLog; }
     
     protected SynchronizedStack<HttpProcessor> httpProcCache = new SynchronizedStack<>();
+    
     private int cacheMax = 100;//default, control the cache size
     public void setCacheMax(int max){ this.cacheMax = max; }
     public int getCacheMax(){ return cacheMax; }
