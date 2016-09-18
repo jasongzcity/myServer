@@ -14,12 +14,17 @@ Steps to build & startup:
 4.cd ${Repository}/output/bin
 5.call ./startup
 
+or 
+1.git clone https://github.com/jasongzcity/myServer.git
+2.cd ${Repository}
+3.ant run
+
 Notice: If user have set environmental variable SERVER_HOME, please point
 to ${Repository}/output or the server may not successfully start up.
 
 whenever user wants to shutdown the server, call ./shutdown.
 
 There are some test resources in the "webroot" directory already.
-Try to request for the resources through browser :-)
+Try to request for the resources through browser :-)). The server is using localhost:8080 as its default ip:port.
 User can also put some other resources in the webroot.
 Put static resources in the static directory, and servlet classes in the "servlet" dir.

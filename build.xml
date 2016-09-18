@@ -72,16 +72,17 @@
         </copy>
         <copy todir="${output.lib}">
             <fileset dir="${lib}"/>
-       </copy>
-       <copy todir="${output.binary}">
+        </copy>
+        <copy todir="${output.binary}">
             <fileset dir="${bin}"/>
-       </copy>
+        </copy>
+        <chmod dir="${output.binary}" perm="a+x" includes="**/*.sh"></chmod>
     </target>
 
 <!-- use cautiously it will cause a running JVM in the background -->
     <target name="run" depends="deploy" >
         <java classname="com.jason.server.connector.Bootstrap"  fork="true">
-        	<sysproperty key="server.base" path="${output}"/>
+            <sysproperty key="server.base" path="${output}"/>
             <classpath>
                 <pathelement location="${output.classes}"/>
                 <fileset dir="${output.lib}">
